@@ -1,19 +1,37 @@
 ---
-description: Run the multi-agent PM pipeline (interactive or autonomous)
+description: Run the multi-agent PM pipeline (interactive or autonomous, at variable depth)
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob, WebSearch, WebFetch, Agent
-argument-hint: "[feature-or-topic] [--mode interactive or autonomous]"
+argument-hint: "[feature-or-topic] [--mode interactive or autonomous] [--depth quick or standard or deep]"
 ---
 
 # PM Pipeline Orchestrator
 
 Run the full PM pipeline for `$ARGUMENTS`. Parse the arguments:
-- The feature/topic is everything before `--mode` (or the entire argument if no mode flag)
+- The feature/topic is everything before flags (or the entire argument if no flags)
 - `--mode interactive` (default): pause after each stage for human review
 - `--mode autonomous`: run all stages end-to-end, flag open questions for human at the end
+- `--depth quick|standard|deep` (default: deep): controls how many stages run
+
+## Pipeline Depth Modes
+
+Not every product question needs 10 stages. The `--depth` flag selects a stage subset:
+
+| Depth | Stages Run | Use When | Artifacts Produced |
+|-------|-----------|----------|-------------------|
+| **quick** | 0 → 0.5 → 1 → 2 → 5 | Exploring an idea, quick prototype, internal pitch | current-state, research, one-pager PRD, prototype (Vision Mode) |
+| **standard** | 0 → 0.5 → 1 → 2 → 3 → 4 → 5 → 6 | Serious feature work, eng handoff needed | All quick artifacts + Gandalf gate, design spec, launch readiness |
+| **deep** | All 10 stages | High-stakes bets, cross-org alignment, new product areas | Full pipeline including debate, eng alignment deck, post-launch eval |
+
+### Depth Behavior Rules
+- **quick** skips Gandalf, Debate, Designer, Launch Readiness, Eng Alignment, Post-Launch. The Prototype Builder still runs in Vision Mode but reads the PRD directly (no design spec). Feedback loops 1-3 are skipped.
+- **standard** skips Adversarial Debate (Stage 3.5), Eng Alignment Packager (Stage 6.5), and Post-Launch Evaluator (Stage 7). All feedback loops run.
+- **deep** runs everything. This is the default.
+- If no `--depth` flag is provided, default to **deep**.
+- The user can upgrade depth mid-run: "go deeper" at any interactive pause triggers the remaining stages from the current point.
 
 ## Pipeline Architecture
 
-10 stages (7 primary + 3 half-stages), executed sequentially (Stage 7 is deferred). Each stage produces a versioned artifact in the working directory. Feedback loops run as post-stage side effects (non-blocking) — the pipeline always moves forward. After each stage, an incremental git commit is made and cross-stage notes are appended to `stage-notes.md`.
+11 stages (7 primary + 4 half-stages), executed sequentially (Stage 7 is deferred). Each stage produces a versioned artifact in the working directory. Feedback loops run as post-stage side effects (non-blocking) — the pipeline always moves forward. After each stage, an incremental git commit is made and cross-stage notes are appended to `stage-notes.md`.
 
 ### Stage 0: Setup
 1. Create a working directory: `pipeline-[topic-slug]/`
@@ -83,6 +101,14 @@ Invoke the `prototype-builder` skill in **Vision Mode** (default). Pass the appr
 - **After completion:** Append fidelity results to `stage-notes.md` under `## Stage 5 Notes`
 - **Feedback (5→4 critique):** After prototype is validated, the Prototype Builder emits a "Fidelity Report" comparing what was built vs what the design spec specified, with a fidelity score (0-100%). If fidelity score < 90%, the Designer reviews the report and updates the design spec to reconcile gaps → `design-spec-v[next].md`. This runs as a side effect, not a blocker.
 - **Feedback (5→2 final):** After prototype is finalized (including any fidelity-driven updates), the Prototype Builder patches the PRD's "End-to-End Experience" section with the canonical prototype experience (what was actually built and validated) → `prd-v[final].md`. This is the last PRD update in the pipeline.
+
+### Stage 5.5: Validation Checkpoint
+Invoke the `validation-planner` skill. Pass the validated prototype + latest PRD + Gandalf flags.
+- Output: `validation-plan-v1.md` — assumption map, prototype test plan (5 usability tasks), go/pivot criteria
+- In interactive mode: pause for the PM to run external validation (user interviews, stakeholder reviews, usability tests). Pipeline resumes when the user provides results or says "proceed."
+- In autonomous mode: emit the validation plan, flag "external validation pending" in pipeline-state.md, and proceed to Stage 6.
+- **After completion:** Append validation plan summary to `stage-notes.md` under `## Stage 5.5 Notes`
+- This stage does NOT validate the artifacts — it produces the plan for the PM to validate the product hypothesis externally.
 
 ### Stage 6: Launch Readiness
 Invoke the `launch-readiness` skill. Pass all approved artifacts (using the latest versions, including feedback-patched PRD and design spec).
@@ -185,6 +211,9 @@ Stage 5 completes → git commit → append stage-notes
   ├─ [side effect] Loop 2 fires (5→4): fidelity report, update design spec if < 90%
   └─ [after Loop 2] Loop 3 fires (5→2): patch PRD with canonical prototype experience → prd-v[final].md
 
+Stage 5.5 starts (Validation Checkpoint) → git commit → append stage-notes
+  └─ In interactive mode: PAUSE for external validation. In autonomous mode: flag and continue.
+
 Stage 6 starts after Loop 3 completes (needs final PRD) → git commit → append stage-notes
 
 Stage 6.5 starts (Eng Alignment Package) → git commit → append stage-notes
@@ -274,10 +303,37 @@ When handing off between stages, pass ONLY what the next stage needs. Note: the 
 - Loop 1 (4→2): design-spec "End-to-End Experience" section → PRD Writer
 - Loop 2 (5→4): fidelity report (full) → Designer + design-spec (full)
 - Loop 3 (5→2): prototype canonical experience summary → PRD Writer + latest prd version
-- Stage 6 gets: all artifacts (executive summaries) + design-spec latest version (full) + prd-v[final] (full) + prototype path
+- Stage 5.5 gets: prototype path + latest prd version (full) + gandalf-evaluation (flags section only)
+- Stage 6 gets: all artifacts (executive summaries) + design-spec latest version (full) + prd-v[final] (full) + prototype path + validation-plan (if exists)
 - Stage 6.5 gets: ALL artifacts (latest versions) — this is the terminal packaging stage, it reads everything
 - Stage 7 gets: launch-readiness (Sections 5, 11, 13 only) + prd-v[final] (JTBD list + North Star only) + user-provided post-launch metrics + incident log (if available)
 - Loop 4 (7→1, next cycle): iteration backlog + risk calibration + JTBD verdicts → next cycle's Researcher
+
+## Autonomous Mode Governance
+
+When running `--mode autonomous`, the pipeline makes decisions without pausing. This section classifies which decisions the model can make, which it proposes, and which require human approval.
+
+### Model Decides (no pause)
+- Proceed to next stage after current stage completes
+- Proceed past failed Gandalf questions (flag them, move forward)
+- Choose artifact version numbers
+- Select which feedback loops to trigger based on scores
+- Generate all artifacts and stage-notes entries
+- Make git commits per stage
+
+### Model Proposes (flags for human at end)
+- Scope changes to PRD (additions or cuts discovered during later stages)
+- Design spec deviations from PRD intent
+- Prototype features that deviate from design spec (logged in fidelity report)
+- Validation checkpoint findings that suggest pivot
+- Any assumption with confidence < Medium
+
+### Human Must Approve (pipeline pauses even in autonomous mode)
+- Final go/no-go on launch readiness (Stage 6 completion)
+- External validation results (Stage 5.5 — cannot be auto-generated)
+- Merging iteration backlog into next pipeline cycle (Loop 4)
+
+All flags are collected in `pipeline-state.md` under `## Autonomous Mode Flags` and presented as a summary when the pipeline completes.
 
 ## Error Handling
 

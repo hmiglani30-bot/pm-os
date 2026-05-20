@@ -1,6 +1,10 @@
 # PM-OS
 
-A Claude Code plugin that runs a 10-stage AI agent pipeline — taking a product idea from raw research through adversarial review to a working HTML prototype and eng-ready deck, all in one command.
+A Claude Code plugin that runs an 11-stage AI agent pipeline — taking a product idea from raw research through adversarial review to a working HTML prototype and eng-ready deck, all in one command.
+
+## What PM-OS Is (and Isn't)
+
+PM-OS is a **personal PM operating system** for senior PMs who use Claude Code. It automates the artifact-generation chain (research → PRD → design → prototype → eng package) while preserving context between stages. It is not a team collaboration tool, not a SaaS product, not a replacement for PM judgment. The pipeline generates artifacts and stress-tests them adversarially — the PM makes the decisions. It runs on Claude Code because the plugin system gives agents access to web research, file generation, and iterative prototyping in a single environment.
 
 ## The Problem
 
@@ -10,25 +14,26 @@ PMs spend weeks cycling between docs: writing research in one tool, drafting PRD
 
 PM-OS replaces the multi-tool, multi-week workflow with a single pipeline command. Each stage is a specialized AI agent that reads the previous stage's output, produces a versioned artifact, and passes structured context forward. An adversarial gate (Gandalf) stress-tests the strategy with 12 scored questions before design begins. A second gate (Adversarial Debate) generates new ideas through structured argument. The prototype builder produces a working Cloudscape HTML demo — not a mockup, a clickable product. Every artifact is version-controlled with git commits per stage, so you can diff any two stages to see exactly what changed.
 
-The pipeline runs in two modes: **interactive** (pause after each stage for human review) or **autonomous** (run end-to-end, flag open questions at the end).
+The pipeline runs in two modes — **interactive** (pause after each stage for human review) or **autonomous** (run end-to-end, flag open questions at the end) — and three depth levels: **quick** (research + PRD + prototype), **standard** (adds adversarial gate + design + launch readiness), or **deep** (full 11-stage pipeline with debate, validation, eng alignment).
 
 ## What's Built
 
-### Pipeline Stages (10 stages, executed sequentially)
+### Pipeline Stages (11 stages, executed sequentially)
 
-| Stage | Agent | What It Does | Version |
-|-------|-------|-------------|---------|
-| 0 | Setup | Creates working directory, pipeline state, stage-notes log | — |
-| 0.5 | Current State Auditor | Examines existing product UX, maps pain points, inventories competitor interaction patterns | v0.2.0 |
-| 1 | Researcher | Deep competitive analysis, capability evolution timelines, interaction pattern benchmarking | v0.5.0 |
-| 2 | PRD Writer | Customer-first PRD with dual-scope boundary (Eng v1 + Proto v1), 25 MECE FAQs, solution lineage | v0.4.0 |
-| 3 | Gandalf | Adversarial strategy gate — 12 scored questions, hybrid rubric + evidence scoring, max 3 rounds | v0.3.0 |
-| 3.5 | Adversarial Debate | 5-round structured debate between 5 expert personas, produces new ideas through argument | v0.1.0 |
-| 4 | Designer | UX/experience design with product navigation map, 5-minute demo script, Cloudscape component mapping | v0.3.0 |
-| 5 | Prototype Builder | Single-file HTML prototype in Vision Mode (maximalist, demoable) or Spec Mode (production-faithful) | v0.3.0 |
-| 6 | Launch Readiness | Eng handoff: sprint breakdown, acceptance criteria, RACI, phased rollout, monitoring, rollback plan | v0.2.0 |
-| 6.5 | Eng Alignment Packager | 30-minute meeting package — structured doc + PPTX deck with live prototype walkthrough script | v0.1.0 |
-| 7 | Post-Launch Evaluator | Compares production metrics against predictions, produces iteration backlog (deferred, 30+ days post-GA) | v0.1.0 |
+| Stage | Agent | What It Does | Version | Depth |
+|-------|-------|-------------|---------|-------|
+| 0 | Setup | Creates working directory, pipeline state, stage-notes log | — | all |
+| 0.5 | Current State Auditor | Examines existing product UX, maps pain points, inventories competitor interaction patterns | v0.2.0 | all |
+| 1 | Researcher | Deep competitive analysis, capability evolution timelines, interaction pattern benchmarking | v0.5.0 | all |
+| 2 | PRD Writer | Customer-first PRD with dual-scope boundary (Eng v1 + Proto v1), 25 MECE FAQs, solution lineage | v0.4.0 | all |
+| 3 | Gandalf | Adversarial strategy gate — 12 scored questions, hybrid rubric + evidence scoring, max 3 rounds | v0.3.0 | standard+ |
+| 3.5 | Adversarial Debate | 5-round structured debate between 5 expert personas, produces new ideas through argument | v0.1.0 | deep |
+| 4 | Designer | UX/experience design with product navigation map, 5-minute demo script, Cloudscape component mapping | v0.3.0 | standard+ |
+| 5 | Prototype Builder | Single-file HTML prototype in Vision Mode (maximalist, demoable) or Spec Mode (production-faithful) | v0.3.0 | all |
+| 5.5 | Validation Planner | Assumption map, prototype test plan (5 usability tasks), go/pivot criteria for external validation | v0.1.0 | deep |
+| 6 | Launch Readiness | Eng handoff: sprint breakdown, acceptance criteria, RACI, phased rollout, monitoring, rollback plan | v0.2.0 | standard+ |
+| 6.5 | Eng Alignment Packager | 30-minute meeting package — structured doc + PPTX deck with live prototype walkthrough script | v0.1.0 | deep |
+| 7 | Post-Launch Evaluator | Compares production metrics against predictions, produces iteration backlog (deferred, 30+ days post-GA) | v0.1.0 | deep |
 
 ### Utility Skills
 
@@ -54,7 +59,7 @@ The pipeline runs in two modes: **interactive** (pause after each stage for huma
 ## How It Works
 
 ```
-/pm-pipeline [topic] --mode interactive
+/pm-pipeline [topic] --mode interactive --depth deep
 ```
 
 ```
@@ -69,17 +74,44 @@ Stage 0 (Setup)
                                 └→ Stage 5 (Prototype) → prototype-v1.html
                                      ├→ [side effect] Loop 2: Fidelity report → Designer
                                      └→ Loop 3: Prototype patches PRD → prd-v[final].md
-                                          └→ Stage 6 (Launch Readiness) → launch-readiness-v1.md
-                                               └→ Stage 6.5 (Eng Alignment) → eng-alignment-v1.md + .pptx
+                                          └→ Stage 5.5 (Validation Checkpoint) → validation-plan-v1.md
+                                               └→ Stage 6 (Launch Readiness) → launch-readiness-v1.md
+                                                    └→ Stage 6.5 (Eng Alignment) → eng-alignment-v1.md + .pptx
 ```
 
 Four feedback loops run as non-blocking side effects — the pipeline always moves forward. Every stage commits to git, so you can `git diff` between any two stages.
 
+## Who Reads What
+
+Different stakeholders consume different pipeline artifacts:
+
+| Stakeholder | Primary Artifact | What to Focus On |
+|------------|-----------------|-----------------|
+| PM (you) | All artifacts | Full pipeline — this is your operating system |
+| Engineering Lead | `launch-readiness-v1.md` | Eng spec, sprint breakdown, acceptance criteria, tech debt |
+| Designer | `design-spec-v1.md` + `prototype-v1.html` | Navigation map, interaction states, Cloudscape mapping |
+| Director / VP | `eng-alignment-v1.pptx` | 10-slide deck with demo walkthrough and "The Ask" |
+| Other PMs | `research-v1.md` + `prd-v1.md` | Market context, competitive landscape, JTBD, solution lineage |
+| QA / Test | `launch-readiness-v1.md` | Acceptance criteria (GIVEN/WHEN/THEN), phased rollout gates |
+
 ## Quick Start
 
-1. Install this as a Claude Code plugin (copy the repo to your plugins directory or install via `.plugin` file)
-2. Run: `/pm-pipeline AI Adoption Control Plane --mode interactive`
-3. The pipeline creates a working directory and walks you through each stage
+```bash
+# Clone the repo
+git clone https://github.com/hmiglani30-bot/pm-os.git
+
+# Option A: Install as a Claude Code plugin (recommended)
+# In Claude Code, run: /install-plugin /path/to/pm-os
+
+# Option B: Copy to your Claude Code plugins directory
+cp -r pm-os ~/.claude/plugins/pm-os
+```
+
+Then in Claude Code or Cowork:
+```
+/pm-pipeline AI Adoption Control Plane --mode interactive --depth deep
+/pm-pipeline session replay improvements --mode autonomous --depth quick
+```
 
 ## Example Output
 

@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CloudWatch AI Control Plane — Prototype v1</title>
+  <style>
+    /* ===== RESET & TOKENS ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --aws-squid-ink: #232f3e;
+      --aws-anchor: #0972d3;
+      --aws-anchor-hover: #033160;
+      --bg-page: #f2f3f3;
+      --bg-container: #ffffff;
+      --bg-header: #0f1b2a;
+      --bg-nav: #0f1b2a;
+      --bg-split: #ffffff;
+      --border-light: #e9ebed;
+      --border-medium: #d1d5db;
+      --text-primary: #000716;
+      --text-secondary: #5f6b7a;
+      --text-inverse: #ffffff;
+      --text-link: #0972d3;
+      --status-positive: #037f0c;
+      --status-positive-bg: #f2fcf3;
+      --status-warning: #8d6605;
+      --status-warning-bg: #fef8e7;
+      --status-negative: #d91515;
+      --status-negative-bg: #fff7f7;
+      --status-info: #0972d3;
+      --status-info-bg: #f0f6ff;
+      --radius: 16px;
+      --radius-sm: 8px;
+      --shadow-sm: 0 1px 2px rgba(0,7,22,.12);
+      --shadow-md: 0 2px 8px rgba(0,7,22,.12);
+      --shadow-lg: 0 4px 20px rgba(0,7,22,.15);
+      --font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --nav-width: 240px;
+      --header-height: 48px;
+    }
+
+    body {
+      font-family: var(--font-family);
+      background: var(--bg-page);
+      color: var(--text-primary);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* ===== TOP HEADER BAR ===== */
+    .top-header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+      height: var(--header-height);
+      background: var(--bg-header);
+      display: flex; align-items: center;
+      padding: 0 20px;
+      color: var(--text-inverse);
+    }
+    .top-header .logo { font-weight: 700; font-size: 15px; letter-spacing: -0.2px; }
+    .top-header .logo span { color: #ff9900; }
+    .top-header .breadcrumb { margin-left: 24px; font-size: 13px; color: #8d9db5; }
+    .top-header .breadcrumb a { color: #8d9db5; text-decoration: none; }
+    .top-header .breadcrumb a:hover { color: #fff; text-decoration: underline; }
+    .top-header .breadcrumb .sep { margin: 0 6px; }
+    .top-header .header-actions { margin-left: auto; display: flex; gap: 12px; align-items: center; }
+    .top-header .header-actions .time-badge {
+      background: rgba(255,255,255,0.1); border-radius: 4px; padding: 4px 10px; font-size: 12px;
+    }
+
+    /* ===== SIDE NAVIGATION ===== */
+    .side-nav {
+      position: fixed; top: var(--header-height); left: 0; bottom: 0;
+      width: var(--nav-width); background: var(--bg-nav);
+      padding: 16px 0; overflow-y: auto; z-index: 900;
+    }
+    .nav-section-title {
+      color: #8d9db5; font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.5px; padding: 12px 20px 6px; margin-top: 8px;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 20px; color: #d1d5db; font-size: 14px; cursor: pointer;
+      transition: all 0.15s; text-decoration: none; border-left: 3px solid transparent;
+    }
+    .nav-item:hover { background: rgba(255,255,255,0.06); color: #fff; }
+    .nav-item.active { background: rgba(9,114,211,0.15); color: #539fe5; border-left-color: #539fe5; }
+    .nav-item .nav-icon { width: 18px; text-align: center; font-size: 13px; }
+    .nav-item .nav-badge {
+      margin-left: auto; background: var(--status-negative); color: #fff;
+      font-size: 11px; padding: 1px 7px; border-radius: 10px; font-weight: 600;
+    }
+    .nav-divider { height: 1px; background: rgba(255,255,255,0.08); margin: 8px 16px; }
+
+    /* ===== MAIN CONTENT ===== */
+    .main-content {
+      margin-left: var(--nav-width); margin-top: var(--header-height);
+      padding: 24px; min-height: calc(100vh - var(--header-height));
+      transition: margin-bottom 0.3s ease;
+    }
+    .main-content.split-open { margin-bottom: 420px; }
+
+    /* ===== PAGE HEADER ===== */
+    .page-header {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      margin-bottom: 24px;
+    }
+    .page-header h1 { font-size: 24px; font-weight: 700; color: var(--text-primary); }
+    .page-header .subtitle { color: var(--text-secondary); font-size: 14px; margin-top: 4px; }
+    .page-header .actions { display: flex; gap: 8px; align-items: center; }
+
+    /* ===== FLASHBAR ===== */
+    .flashbar {
+      background: var(--status-info-bg); border: 1px solid #b6d4f8; border-radius: var(--radius-sm);
+      padding: 12px 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;
+      font-size: 14px;
+    }
+    .flashbar .flash-icon { font-size: 16px; }
+    .flashbar .flash-dismiss {
+      margin-left: auto; background: none; border: none; cursor: pointer;
+      color: var(--text-secondary); font-size: 16px; padding: 4px;
+    }
+    .flashbar .flash-link { color: var(--text-link); text-decoration: none; font-weight: 600; }
+    .flashbar .flash-link:hover { text-decoration: underline; }
+
+    /* ===== BUTTONS ===== */
+    .btn {
+      padding: 6px 16px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600;
+      cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px;
+      border: 2px solid transparent; font-family: var(--font-family);
+    }
+    .btn-primary { background: var(--aws-anchor); color: #fff; border-color: var(--aws-anchor); }
+    .btn-primary:hover { background: var(--aws-anchor-hover); border-color: var(--aws-anchor-hover); }
+    .btn-normal { background: #fff; color: var(--text-primary); border-color: var(--border-medium); }
+    .btn-normal:hover { background: #fafafa; border-color: #9ba7b6; }
+    .btn-icon { background: none; border: none; cursor: pointer; color: var(--text-secondary); padding: 6px; border-radius: 4px; }
+    .btn-icon:hover { background: #e9ebed; color: var(--text-primary); }
+    .btn-dropdown { position: relative; }
+    .btn-dropdown .dropdown-menu {
+      position: absolute; top: 100%; right: 0; margin-top: 4px; background: #fff;
+      border: 1px solid var(--border-light); border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-lg); min-width: 200px; z-index: 100; display: none;
+    }
+    .btn-dropdown.open .dropdown-menu { display: block; }
+    .dropdown-item {
+      padding: 8px 16px; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 8px;
+    }
+    .dropdown-item:hover { background: #f0f6ff; }
+
+    /* ===== SUMMARY CARDS ===== */
+    .summary-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;
+    }
+    .summary-card {
+      background: var(--bg-container); border-radius: var(--radius); padding: 20px;
+      border: 1px solid var(--border-light); box-shadow: var(--shadow-sm);
+    }
+    .summary-card .card-label {
+      font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px;
+      color: var(--text-secondary); margin-bottom: 8px;
+    }
+    .summary-card .card-value { font-size: 36px; font-weight: 700; color: var(--text-primary); line-height: 1; }
+    .summary-card .card-trend {
+      display: inline-flex; align-items: center; gap: 4px; font-size: 13px; margin-top: 8px;
+      padding: 2px 8px; border-radius: 4px;
+    }
+    .trend-up { background: var(--status-positive-bg); color: var(--status-positive); }
+    .trend-down { background: var(--status-negative-bg); color: var(--status-negative); }
+    .trend-neutral { background: #f2f3f3; color: var(--text-secondary); }
+    .card-subtitle { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+
+    /* ===== CONTAINER (generic) ===== */
+    .container-panel {
+      background: var(--bg-container); border-radius: var(--radius); padding: 0;
+      border: 1px solid var(--border-light); box-shadow: var(--shadow-sm); margin-bottom: 24px;
+      overflow: hidden;
+    }
+    .container-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px; border-bottom: 1px solid var(--border-light);
+    }
+    .container-header h2 { font-size: 18px; font-weight: 700; }
+    .container-header .header-counter {
+      background: #e9ebed; padding: 2px 10px; border-radius: 10px; font-size: 12px;
+      font-weight: 600; margin-left: 8px; color: var(--text-secondary);
+    }
+    .container-body { padding: 0; }
+
+    /* ===== PROPERTY FILTER ===== */
+    .property-filter {
+      padding: 12px 20px; border-bottom: 1px solid var(--border-light);
+      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    }
+    .filter-input {
+      flex: 1; min-width: 200px; padding: 7px 12px; border: 1px solid var(--border-medium);
+      border-radius: var(--radius-sm); font-size: 14px; font-family: var(--font-family);
+      outline: none;
+    }
+    .filter-input:focus { border-color: var(--aws-anchor); box-shadow: 0 0 0 2px rgba(9,114,211,0.2); }
+    .filter-token {
+      display: inline-flex; align-items: center; gap: 4px; background: #e9ebed;
+      border-radius: 4px; padding: 4px 8px; font-size: 13px;
+    }
+    .filter-token .remove-token {
+      background: none; border: none; cursor: pointer; font-size: 14px; color: var(--text-secondary);
+      padding: 0 2px; line-height: 1;
+    }
+    .filter-suggestions {
+      position: absolute; top: 100%; left: 0; right: 0; background: #fff;
+      border: 1px solid var(--border-light); border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-lg); z-index: 50; display: none; max-height: 300px; overflow-y: auto;
+    }
+    .filter-suggestion { padding: 8px 12px; cursor: pointer; font-size: 13px; }
+    .filter-suggestion:hover { background: #f0f6ff; }
+    .filter-suggestion .suggestion-cat { color: var(--text-secondary); font-size: 12px; }
+
+    /* ===== DATA TABLE ===== */
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table thead th {
+      text-align: left; padding: 10px 16px; font-size: 12px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.3px; color: var(--text-secondary);
+      border-bottom: 2px solid var(--border-light); background: #fafbfc;
+      cursor: pointer; user-select: none; white-space: nowrap;
+    }
+    .data-table thead th:hover { background: #f0f1f3; }
+    .data-table thead th .sort-icon { margin-left: 4px; font-size: 10px; opacity: 0.4; }
+    .data-table thead th.sorted .sort-icon { opacity: 1; color: var(--aws-anchor); }
+    .data-table tbody tr {
+      cursor: pointer; transition: background 0.1s;
+    }
+    .data-table tbody tr:hover { background: #f0f6ff; }
+    .data-table tbody tr.selected { background: #e6f0ff; }
+    .data-table tbody td { padding: 12px 16px; border-bottom: 1px solid var(--border-light); font-size: 14px; }
+    .data-table .cell-name { font-weight: 600; color: var(--text-link); }
+    .data-table .cell-name:hover { text-decoration: underline; }
+    .data-table .cell-secondary { color: var(--text-secondary); font-size: 13px; }
+    .data-table .cell-mono { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 13px; }
+
+    /* Status indicators */
+    .status { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .status-healthy .status-dot { background: var(--status-positive); }
+    .status-healthy { color: var(--status-positive); }
+    .status-warning .status-dot { background: var(--status-warning); }
+    .status-warning { color: var(--status-warning); }
+    .status-error .status-dot { background: var(--status-negative); }
+    .status-error { color: var(--status-negative); }
+    .status-unknown .status-dot { background: #9ba7b6; }
+    .status-unknown { color: var(--text-secondary); }
+
+    /* Guardrail badges */
+    .guardrail-badge {
+      display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px;
+      border-radius: 4px; font-size: 12px; font-weight: 600;
+    }
+    .guardrail-active { background: var(--status-positive-bg); color: var(--status-positive); }
+    .guardrail-partial { background: var(--status-warning-bg); color: var(--status-warning); }
+    .guardrail-none { background: var(--status-negative-bg); color: var(--status-negative); }
+
+    /* Sparkline */
+    .sparkline { width: 80px; height: 24px; vertical-align: middle; }
+
+    /* Pagination */
+    .table-footer {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 20px; border-top: 1px solid var(--border-light); background: #fafbfc;
+    }
+    .table-footer .page-info { font-size: 13px; color: var(--text-secondary); }
+    .pagination { display: flex; gap: 4px; }
+    .pagination button {
+      padding: 4px 10px; border: 1px solid var(--border-medium); border-radius: 4px;
+      background: #fff; cursor: pointer; font-size: 13px; font-family: var(--font-family);
+    }
+    .pagination button:hover { background: #f0f6ff; }
+    .pagination button.active { background: var(--aws-anchor); color: #fff; border-color: var(--aws-anchor); }
+    .pagination button:disabled { opacity: 0.4; cursor: default; }
+
+    /* ===== SPLIT PANEL ===== */
+    .split-panel {
+      position: fixed; bottom: 0; left: var(--nav-width); right: 0; height: 420px;
+      background: var(--bg-split); border-top: 2px solid var(--border-light);
+      box-shadow: 0 -4px 20px rgba(0,7,22,.1);
+      transform: translateY(100%); transition: transform 0.3s ease; z-index: 800;
+    }
+    .split-panel.open { transform: translateY(0); }
+    .split-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 20px; border-bottom: 1px solid var(--border-light); background: #fafbfc;
+    }
+    .split-header h3 { font-size: 16px; font-weight: 700; }
+    .split-header .split-subtitle { color: var(--text-secondary); font-size: 13px; margin-left: 8px; }
+    .split-close { background: none; border: none; cursor: pointer; font-size: 20px; color: var(--text-secondary); padding: 4px 8px; border-radius: 4px; }
+    .split-close:hover { background: #e9ebed; color: var(--text-primary); }
+
+    /* Split panel tabs */
+    .split-tabs {
+      display: flex; border-bottom: 1px solid var(--border-light); padding: 0 20px; background: #fafbfc;
+    }
+    .split-tab {
+      padding: 10px 16px; font-size: 14px; cursor: pointer; border-bottom: 3px solid transparent;
+      color: var(--text-secondary); font-weight: 600; transition: all 0.15s;
+      background: none; border-top: none; border-left: none; border-right: none;
+      font-family: var(--font-family);
+    }
+    .split-tab:hover { color: var(--text-primary); }
+    .split-tab.active { color: var(--aws-anchor); border-bottom-color: var(--aws-anchor); }
+    .split-content { padding: 20px; overflow-y: auto; height: calc(420px - 100px); }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    /* KV Pairs */
+    .kv-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .kv-item .kv-label { font-size: 12px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+    .kv-item .kv-value { font-size: 14px; font-weight: 600; margin-top: 4px; }
+
+    /* Inline alert */
+    .inline-alert {
+      display: flex; align-items: flex-start; gap: 10px; padding: 12px 16px;
+      border-radius: var(--radius-sm); margin-top: 16px;
+    }
+    .inline-alert.alert-warning { background: var(--status-warning-bg); border: 1px solid #e9c46a; }
+    .inline-alert.alert-error { background: var(--status-negative-bg); border: 1px solid #f5b8b8; }
+    .inline-alert.alert-info { background: var(--status-info-bg); border: 1px solid #b6d4f8; }
+    .inline-alert .alert-icon { font-size: 16px; margin-top: 1px; }
+    .inline-alert .alert-text { flex: 1; font-size: 13px; }
+    .inline-alert .alert-title { font-weight: 700; margin-bottom: 2px; }
+
+    /* Chart placeholder */
+    .chart-area {
+      background: #fafbfc; border: 1px solid var(--border-light); border-radius: var(--radius-sm);
+      padding: 16px; margin-top: 16px;
+    }
+    .chart-area .chart-title { font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 12px; }
+    .mini-chart { display: flex; align-items: flex-end; gap: 3px; height: 80px; }
+    .mini-bar { background: var(--aws-anchor); border-radius: 2px 2px 0 0; min-width: 18px; transition: height 0.3s; opacity: 0.7; }
+    .mini-bar:hover { opacity: 1; }
+
+    /* Guardrails nested table */
+    .nested-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    .nested-table th { text-align: left; padding: 8px 12px; font-size: 12px; font-weight: 600; color: var(--text-secondary); background: #fafbfc; border-bottom: 1px solid var(--border-light); }
+    .nested-table td { padding: 8px 12px; font-size: 13px; border-bottom: 1px solid var(--border-light); }
+
+    /* Timeline */
+    .timeline-item { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border-light); }
+    .timeline-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--aws-anchor); margin-top: 6px; flex-shrink: 0; }
+    .timeline-item .tl-time { font-size: 12px; color: var(--text-secondary); min-width: 140px; }
+    .timeline-item .tl-event { font-size: 13px; }
+    .timeline-item .tl-event strong { color: var(--text-primary); }
+
+    /* ===== MATURITY SECTION ===== */
+    .maturity-section { margin-top: 24px; }
+    .maturity-bar-track { background: #e9ebed; border-radius: 8px; height: 12px; overflow: hidden; margin-top: 8px; }
+    .maturity-bar-fill { height: 100%; border-radius: 8px; transition: width 0.6s ease; }
+    .maturity-level-label { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+    .maturity-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; }
+    .maturity-action-card {
+      background: #fafbfc; border: 1px solid var(--border-light); border-radius: var(--radius-sm);
+      padding: 16px;
+    }
+    .maturity-action-card .mac-title { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+    .maturity-action-card .mac-desc { font-size: 13px; color: var(--text-secondary); }
+    .maturity-action-card .mac-impact {
+      display: inline-block; margin-top: 8px; font-size: 12px; font-weight: 600;
+      padding: 2px 8px; border-radius: 4px; background: var(--status-positive-bg); color: var(--status-positive);
+    }
+
+    /* ===== DATE RANGE PICKER ===== */
+    .date-range-picker {
+      display: inline-flex; align-items: center; gap: 0; border: 1px solid var(--border-medium);
+      border-radius: var(--radius-sm); overflow: hidden; font-size: 13px; background: #fff;
+    }
+    .drp-option {
+      padding: 6px 12px; cursor: pointer; border-right: 1px solid var(--border-light);
+      transition: all 0.15s; font-family: var(--font-family); background: none; border-top: none; border-bottom: none; border-left: none;
+    }
+    .drp-option:last-child { border-right: none; }
+    .drp-option:hover { background: #f0f6ff; }
+    .drp-option.active { background: var(--aws-anchor); color: #fff; }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 1199px) {
+      .summary-grid { grid-template-columns: repeat(2, 1fr); }
+      .kv-grid { grid-template-columns: repeat(2, 1fr); }
+      .maturity-actions { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 767px) {
+      .side-nav { display: none; }
+      .main-content { margin-left: 0; }
+      .split-panel { left: 0; }
+      .summary-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===== TOP HEADER ===== -->
+<header class="top-header">
+  <div class="logo"><span>☁</span> CloudWatch</div>
+  <nav class="breadcrumb">
+    <a href="#">CloudWatch</a><span class="sep">/</span>
+    <a href="#">Application Signals</a><span class="sep">/</span>
+    <strong style="color:#fff">AI Control Plane</strong>
+  </nav>
+  <div class="header-actions">
+    <div class="date-range-picker" id="dateRangePicker">
+      <button class="drp-option" data-range="1h">1h</button>
+      <button class="drp-option" data-range="6h">6h</button>
+      <button class="drp-option" data-range="1d">1d</button>
+      <button class="drp-option active" data-range="7d">7d</button>
+      <button class="drp-option" data-range="30d">30d</button>
+    </div>
+    <span class="time-badge">Last updated: 2 min ago</span>
+  </div>
+</header>
+
+<!-- ===== SIDE NAVIGATION ===== -->
+<nav class="side-nav">
+  <div class="nav-section-title">AI Control Plane</div>
+  <a class="nav-item active" data-page="overview"><span class="nav-icon">◉</span> Overview <span class="nav-badge">2</span></a>
+  <a class="nav-item" data-page="cost"><span class="nav-icon">$</span> Cost Intelligence</a>
+  <a class="nav-item" data-page="maturity"><span class="nav-icon">↑</span> Maturity Score</a>
+  <a class="nav-item" data-page="settings"><span class="nav-icon">⚙</span> Settings</a>
+  <div class="nav-divider"></div>
+  <div class="nav-section-title">Related</div>
+  <a class="nav-item"><span class="nav-icon">→</span> Application Signals</a>
+  <a class="nav-item"><span class="nav-icon">→</span> Bedrock Guardrails</a>
+  <a class="nav-item"><span class="nav-icon">→</span> Cost Explorer</a>
+</nav>
+
+<!-- ===== MAIN CONTENT ===== -->
+<main class="main-content" id="mainContent">
+
+  <!-- Flashbar -->
+  <div class="flashbar" id="flashbar">
+    <span class="flash-icon">ℹ️</span>
+    <span><strong>3 new AI workloads detected</strong> since your last visit (May 16). <a href="#" class="flash-link" onclick="scrollToNewWorkloads(); return false;">View new workloads</a></span>
+    <button class="flash-dismiss" onclick="this.parentElement.style.display='none'">✕</button>
+  </div>
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div>
+      <h1>AI Control Plane</h1>
+      <div class="subtitle">Monitor and govern AI workloads across your organization · 4 accounts</div>
+    </div>
+    <div class="actions">
+      <div class="btn-dropdown" id="actionsDropdown">
+        <button class="btn btn-normal" onclick="toggleDropdown()">Actions ▾</button>
+        <div class="dropdown-menu">
+          <div class="dropdown-item" onclick="alert('Generating compliance report...')">📄 Generate Compliance Report</div>
+          <div class="dropdown-item" onclick="alert('Exporting CSV...')">📊 Export CSV</div>
+          <div class="dropdown-item" onclick="alert('Opening schedule...')">⏰ Schedule Report</div>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="alert('Opening setup wizard...')">+ Add Workload</button>
+    </div>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="summary-grid">
+    <div class="summary-card">
+      <div class="card-label">Total AI Workloads</div>
+      <div class="card-value" id="totalWorkloads">14</div>
+      <span class="card-trend trend-up">↑ 3 new this week</span>
+    </div>
+    <div class="summary-card">
+      <div class="card-label">Guardrail Coverage</div>
+      <div class="card-value" style="color: var(--status-warning);" id="guardrailCoverage">68%</div>
+      <span class="card-trend trend-down">↓ Target: 80%</span>
+      <div class="card-subtitle">10 of 14 workloads covered</div>
+    </div>
+    <div class="summary-card">
+      <div class="card-label">Unhealthy Workloads</div>
+      <div class="card-value" style="color: var(--status-negative);" id="unhealthyCount">2</div>
+      <span class="card-trend trend-down">↑ 1 since yesterday</span>
+    </div>
+    <div class="summary-card">
+      <div class="card-label">Monthly AI Cost</div>
+      <div class="card-value" id="totalCost">$27.4K</div>
+      <span class="card-trend trend-up">↑ 12% vs last month</span>
+      <div class="card-subtitle">Across 4 accounts</div>
+    </div>
+  </div>
+
+  <!-- Workloads Table -->
+  <div class="container-panel">
+    <div class="container-header">
+      <div style="display:flex;align-items:center;">
+        <h2>AI Workloads</h2>
+        <span class="header-counter" id="tableCounter">14</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="btn btn-icon" title="Preferences" onclick="alert('Column preferences dialog')">☰</button>
+        <button class="btn btn-icon" title="Refresh" onclick="location.reload()">↻</button>
+      </div>
+    </div>
+
+    <!-- Property Filter -->
+    <div class="property-filter">
+      <div id="activeFilters" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+      <div style="position:relative;flex:1;min-width:200px;">
+        <input type="text" class="filter-input" id="filterInput" placeholder="Filter by property or value..." onfocus="showSuggestions()" oninput="filterSuggestions()" onblur="setTimeout(()=>hideSuggestions(),200)" />
+        <div class="filter-suggestions" id="filterSuggestions"></div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="container-body">
+      <table class="data-table" id="workloadTable">
+        <thead>
+          <tr>
+            <th onclick="sortTable('name')">Name <span class="sort-icon">↕</span></th>
+            <th onclick="sortTable('service')">Service <span class="sort-icon">↕</span></th>
+            <th onclick="sortTable('model')">Model <span class="sort-icon">↕</span></th>
+            <th onclick="sortTable('account')">Account <span class="sort-icon">↕</span></th>
+            <th onclick="sortTable('health')">Health <span class="sort-icon">↕</span></th>
+            <th onclick="sortTable('guardrail')">Guardrail <span class="sort-icon">↕</span></th>
+            <th onclick="sortTable('cost')">Cost (30d) <span class="sort-icon">↕</span></th>
+            <th>Trend</th>
+            <th onclick="sortTable('lastActive')">Last Active <span class="sort-icon">↕</span></th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="table-footer">
+      <div class="page-info" id="pageInfo">Showing 1-14 of 14 workloads</div>
+      <div class="pagination">
+        <button disabled>‹ Previous</button>
+        <button class="active">1</button>
+        <button disabled>Next ›</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Maturity Section -->
+  <div class="container-panel maturity-section">
+    <div class="container-header">
+      <h2>AI Governance Maturity</h2>
+      <span class="guardrail-badge guardrail-partial">Level 2 of 5</span>
+    </div>
+    <div style="padding: 20px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:20px;font-weight:700;">Level 2 — Managed</div>
+          <div class="maturity-level-label">68% guardrail coverage · Cost tracking active · No automated enforcement</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:12px;color:var(--text-secondary);">PROGRESS TO LEVEL 3</div>
+          <div style="font-size:24px;font-weight:700;color:var(--aws-anchor);">42%</div>
+        </div>
+      </div>
+      <div class="maturity-bar-track">
+        <div class="maturity-bar-fill" style="width: 42%; background: linear-gradient(90deg, var(--aws-anchor), #4da6ff);"></div>
+      </div>
+
+      <div style="font-weight:600;margin-top:20px;margin-bottom:8px;">Recommended Actions to Reach Level 3</div>
+      <div class="maturity-actions">
+        <div class="maturity-action-card">
+          <div class="mac-title">Enable guardrails on remaining 4 workloads</div>
+          <div class="mac-desc">fraud-detection-v2, text-extract-sagemaker, product-recommender, and sentiment-analysis are unprotected</div>
+          <span class="mac-impact">+28% coverage</span>
+        </div>
+        <div class="maturity-action-card">
+          <div class="mac-title">Set up automated guardrail enforcement</div>
+          <div class="mac-desc">Configure Bedrock to automatically apply content moderation guardrails to new deployments</div>
+          <span class="mac-impact">Required for Level 3</span>
+        </div>
+        <div class="maturity-action-card">
+          <div class="mac-title">Enable cross-account cost alerting</div>
+          <div class="mac-desc">Set cost anomaly thresholds per workload with CloudWatch Alarms</div>
+          <span class="mac-impact">+$2.1K/mo savings est.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ===== SPLIT PANEL ===== -->
+<div class="split-panel" id="splitPanel">
+  <div class="split-header">
+    <div style="display:flex;align-items:center;">
+      <h3 id="splitTitle">—</h3>
+      <span class="split-subtitle" id="splitSubtitle"></span>
+    </div>
+    <button class="split-close" onclick="closeSplitPanel()">✕</button>
+  </div>
+  <div class="split-tabs">
+    <button class="split-tab active" data-tab="overview" onclick="switchTab('overview', this)">Overview</button>
+    <button class="split-tab" data-tab="guardrails" onclick="switchTab('guardrails', this)">Guardrails</button>
+    <button class="split-tab" data-tab="cost" onclick="switchTab('cost', this)">Cost</button>
+    <button class="split-tab" data-tab="timeline" onclick="switchTab('timeline', this)">Timeline</button>
+  </div>
+  <div class="split-content">
+    <div class="tab-pane active" id="tab-overview"></div>
+    <div class="tab-pane" id="tab-guardrails"></div>
+    <div class="tab-pane" id="tab-cost"></div>
+    <div class="tab-pane" id="tab-timeline"></div>
+  </div>
+</div>
+
+<script>
+// ===== MOCK DATA =====
+const WORKLOADS = [
+  { id:1, name:"customer-support-bot", service:"Bedrock", model:"Claude 3.5 Sonnet", account:"prod-main (1234-5678)", accountId:"1234", health:"healthy", guardrail:"active", guardrailName:"Content Moderation v2", cost:4850, costTrend:[3200,3400,3800,4100,4200,4500,4850], lastActive:"2 min ago", isNew:false, region:"us-east-1", invocations:"1.2M", latencyP50:"120ms", latencyP99:"340ms", errorRate:"0.12%", team:"AI Platform" },
+  { id:2, name:"fraud-detection-v2", service:"SageMaker", model:"XGBoost Custom", account:"prod-main (1234-5678)", accountId:"1234", health:"error", guardrail:"none", guardrailName:null, cost:5200, costTrend:[4800,5000,4900,5100,5300,5100,5200], lastActive:"5 min ago", isNew:false, region:"us-east-1", invocations:"3.4M", latencyP50:"8ms", latencyP99:"45ms", errorRate:"2.3%", team:"Risk Engineering" },
+  { id:3, name:"doc-summarizer", service:"Bedrock", model:"Claude 3 Haiku", account:"prod-main (1234-5678)", accountId:"1234", health:"healthy", guardrail:"active", guardrailName:"PII Filter + Moderation", cost:1200, costTrend:[800,900,1000,950,1100,1150,1200], lastActive:"1 hr ago", isNew:false, region:"us-east-1", invocations:"450K", latencyP50:"85ms", latencyP99:"210ms", errorRate:"0.05%", team:"Internal Tools" },
+  { id:4, name:"image-classifier-prod", service:"SageMaker", model:"ResNet-50 Fine-tuned", account:"ml-workloads (2345-6789)", accountId:"2345", health:"healthy", guardrail:"active", guardrailName:"Input Validation", cost:3100, costTrend:[2800,2900,3000,3050,3100,3000,3100], lastActive:"30 min ago", isNew:false, region:"us-west-2", invocations:"890K", latencyP50:"35ms", latencyP99:"120ms", errorRate:"0.08%", team:"Computer Vision" },
+  { id:5, name:"code-review-assistant", service:"Bedrock", model:"Claude 3.5 Sonnet", account:"dev-sandbox (3456-7890)", accountId:"3456", health:"warning", guardrail:"active", guardrailName:"Content Moderation v1", cost:2800, costTrend:[1800,2000,2200,2400,2500,2600,2800], lastActive:"15 min ago", isNew:false, region:"us-east-1", invocations:"280K", latencyP50:"450ms", latencyP99:"1.8s", errorRate:"0.4%", team:"Developer Experience" },
+  { id:6, name:"product-recommender", service:"Bedrock", model:"Amazon Titan Embeddings", account:"prod-main (1234-5678)", accountId:"1234", health:"healthy", guardrail:"none", guardrailName:null, cost:1800, costTrend:[1500,1600,1650,1700,1750,1780,1800], lastActive:"3 min ago", isNew:false, region:"us-east-1", invocations:"2.1M", latencyP50:"15ms", latencyP99:"52ms", errorRate:"0.02%", team:"Marketplace" },
+  { id:7, name:"log-anomaly-detector", service:"SageMaker", model:"Random Cut Forest", account:"observability (4567-8901)", accountId:"4567", health:"healthy", guardrail:"active", guardrailName:"Output Validation", cost:920, costTrend:[800,820,850,880,900,910,920], lastActive:"1 min ago", isNew:false, region:"us-east-1", invocations:"5.6M", latencyP50:"3ms", latencyP99:"12ms", errorRate:"0.01%", team:"SRE" },
+  { id:8, name:"chat-moderation-filter", service:"Bedrock", model:"Claude 3 Haiku", account:"prod-main (1234-5678)", accountId:"1234", health:"healthy", guardrail:"active", guardrailName:"Strict Content + PII", cost:650, costTrend:[500,520,550,580,600,630,650], lastActive:"8 min ago", isNew:false, region:"us-east-1", invocations:"780K", latencyP50:"42ms", latencyP99:"95ms", errorRate:"0.03%", team:"Trust & Safety" },
+  { id:9, name:"text-extract-sagemaker", service:"SageMaker", model:"LayoutLM v3", account:"ml-workloads (2345-6789)", accountId:"2345", health:"warning", guardrail:"none", guardrailName:null, cost:1450, costTrend:[1100,1200,1250,1300,1350,1400,1450], lastActive:"45 min ago", isNew:false, region:"us-west-2", invocations:"320K", latencyP50:"220ms", latencyP99:"890ms", errorRate:"1.1%", team:"Document Processing" },
+  { id:10, name:"forecast-demand-model", service:"SageMaker", model:"DeepAR+", account:"analytics (5678-9012)", accountId:"5678", health:"healthy", guardrail:"active", guardrailName:"Input Range Validation", cost:2100, costTrend:[1900,1950,2000,2050,2080,2090,2100], lastActive:"2 hrs ago", isNew:false, region:"us-east-1", invocations:"45K", latencyP50:"1.2s", latencyP99:"3.4s", errorRate:"0.15%", team:"Supply Chain" },
+  { id:11, name:"sentiment-analysis", service:"Bedrock", model:"Amazon Titan Text", account:"prod-main (1234-5678)", accountId:"1234", health:"healthy", guardrail:"none", guardrailName:null, cost:380, costTrend:[200,220,250,280,310,350,380], lastActive:"20 min ago", isNew:true, region:"us-east-1", invocations:"120K", latencyP50:"28ms", latencyP99:"72ms", errorRate:"0.06%", team:"Customer Insights" },
+  { id:12, name:"bedrock-knowledge-base", service:"Bedrock", model:"Claude 3 Sonnet + Titan Embed", account:"dev-sandbox (3456-7890)", accountId:"3456", health:"healthy", guardrail:"active", guardrailName:"RAG Content Filter", cost:1650, costTrend:[1200,1300,1350,1400,1500,1580,1650], lastActive:"10 min ago", isNew:true, region:"us-east-1", invocations:"95K", latencyP50:"380ms", latencyP99:"1.1s", errorRate:"0.2%", team:"Knowledge Management" },
+  { id:13, name:"invoice-processing-ml", service:"SageMaker", model:"Custom BERT Fine-tune", account:"ml-workloads (2345-6789)", accountId:"2345", health:"healthy", guardrail:"active", guardrailName:"PII Detection", cost:780, costTrend:[600,650,680,700,720,750,780], lastActive:"1 hr ago", isNew:true, region:"us-west-2", invocations:"68K", latencyP50:"180ms", latencyP99:"520ms", errorRate:"0.09%", team:"Finance Automation" },
+  { id:14, name:"real-time-translation", service:"Bedrock", model:"Amazon Titan Text", account:"prod-main (1234-5678)", accountId:"1234", health:"healthy", guardrail:"active", guardrailName:"Content Moderation v2", cost:510, costTrend:[400,420,440,460,480,490,510], lastActive:"5 min ago", isNew:false, region:"us-east-1", invocations:"210K", latencyP50:"65ms", latencyP99:"180ms", errorRate:"0.04%", team:"Localization" }
+];
+
+// ===== STATE =====
+let currentSort = { col: 'health', dir: 'asc' };
+let activeFilters = [];
+let selectedWorkload = null;
+
+// ===== RENDER TABLE =====
+function getFilteredData() {
+  let data = [...WORKLOADS];
+  activeFilters.forEach(f => {
+    data = data.filter(w => {
+      if (f.prop === 'service') return w.service.toLowerCase() === f.val.toLowerCase();
+      if (f.prop === 'health') return w.health === f.val.toLowerCase();
+      if (f.prop === 'guardrail') return w.guardrail === f.val.toLowerCase();
+      if (f.prop === 'account') return w.account.toLowerCase().includes(f.val.toLowerCase());
+      return true;
+    });
+  });
+  return data;
+}
+
+function sortData(data) {
+  const { col, dir } = currentSort;
+  const mult = dir === 'asc' ? 1 : -1;
+  const healthOrder = { error: 0, warning: 1, healthy: 2, unknown: 3 };
+  return data.sort((a, b) => {
+    let va, vb;
+    if (col === 'health') { va = healthOrder[a.health]; vb = healthOrder[b.health]; }
+    else if (col === 'cost') { va = a.cost; vb = b.cost; }
+    else if (col === 'name') { va = a.name; vb = b.name; }
+    else if (col === 'service') { va = a.service; vb = b.service; }
+    else if (col === 'model') { va = a.model; vb = b.model; }
+    else if (col === 'account') { va = a.account; vb = b.account; }
+    else if (col === 'guardrail') { va = a.guardrail; vb = b.guardrail; }
+    else { va = a.name; vb = b.name; }
+    if (typeof va === 'string') return va.localeCompare(vb) * mult;
+    return (va - vb) * mult;
+  });
+}
+
+function sortTable(col) {
+  if (currentSort.col === col) {
+    currentSort.dir = currentSort.dir === 'asc' ? 'desc' : 'asc';
+  } else {
+    currentSort = { col, dir: 'asc' };
+  }
+  renderTable();
+}
+
+function renderSparkline(values, color = 'var(--aws-anchor)') {
+  const max = Math.max(...values);
+  const bars = values.map(v => {
+    const h = Math.max(4, (v / max) * 24);
+    return `<div class="mini-bar" style="height:${h}px;width:8px;background:${color};"></div>`;
+  }).join('');
+  return `<div style="display:inline-flex;align-items:flex-end;gap:1px;height:24px;">${bars}</div>`;
+}
+
+function renderTable() {
+  const data = sortData(getFilteredData());
+  const tbody = document.getElementById('tableBody');
+  document.getElementById('tableCounter').textContent = data.length;
+  document.getElementById('pageInfo').textContent = `Showing 1-${data.length} of ${data.length} workloads`;
+
+  tbody.innerHTML = data.map(w => {
+    const healthClass = `status-${w.health}`;
+    const healthLabel = w.health.charAt(0).toUpperCase() + w.health.slice(1);
+    const guardrailClass = w.guardrail === 'active' ? 'guardrail-active' : w.guardrail === 'partial' ? 'guardrail-partial' : 'guardrail-none';
+    const guardrailLabel = w.guardrail === 'active' ? '✓ Active' : w.guardrail === 'partial' ? '◐ Partial' : '✗ None';
+    const costStr = w.cost >= 1000 ? `$${(w.cost/1000).toFixed(1)}K` : `$${w.cost}`;
+    const newBadge = w.isNew ? ' <span style="background:#e6f0ff;color:var(--aws-anchor);font-size:11px;padding:1px 6px;border-radius:3px;font-weight:600;">NEW</span>' : '';
+    const selected = selectedWorkload && selectedWorkload.id === w.id ? 'selected' : '';
+    return `<tr class="${selected}" onclick="openSplitPanel(${w.id})">
+      <td><span class="cell-name">${w.name}</span>${newBadge}</td>
+      <td>${w.service}</td>
+      <td class="cell-secondary">${w.model}</td>
+      <td class="cell-secondary">${w.account.split('(')[0].trim()}</td>
+      <td><span class="status ${healthClass}"><span class="status-dot"></span>${healthLabel}</span></td>
+      <td><span class="guardrail-badge ${guardrailClass}">${guardrailLabel}</span></td>
+      <td class="cell-mono">${costStr}</td>
+      <td>${renderSparkline(w.costTrend)}</td>
+      <td class="cell-secondary">${w.lastActive}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ===== SPLIT PANEL =====
+function openSplitPanel(id) {
+  const w = WORKLOADS.find(x => x.id === id);
+  if (!w) return;
+  selectedWorkload = w;
+  renderTable();
+
+  document.getElementById('splitTitle').textContent = w.name;
+  document.getElementById('splitSubtitle').textContent = `${w.service} · ${w.model} · ${w.region}`;
+
+  // Overview tab
+  document.getElementById('tab-overview').innerHTML = `
+    <div class="kv-grid">
+      <div class="kv-item"><div class="kv-label">Service</div><div class="kv-value">${w.service}</div></div>
+      <div class="kv-item"><div class="kv-label">Model</div><div class="kv-value">${w.model}</div></div>
+      <div class="kv-item"><div class="kv-label">Account</div><div class="kv-value">${w.account}</div></div>
+      <div class="kv-item"><div class="kv-label">Region</div><div class="kv-value">${w.region}</div></div>
+      <div class="kv-item"><div class="kv-label">Team</div><div class="kv-value">${w.team}</div></div>
+      <div class="kv-item"><div class="kv-label">Health</div><div class="kv-value"><span class="status status-${w.health}"><span class="status-dot"></span>${w.health.charAt(0).toUpperCase()+w.health.slice(1)}</span></div></div>
+      <div class="kv-item"><div class="kv-label">Invocations (30d)</div><div class="kv-value">${w.invocations}</div></div>
+      <div class="kv-item"><div class="kv-label">Latency P50 / P99</div><div class="kv-value">${w.latencyP50} / ${w.latencyP99}</div></div>
+      <div class="kv-item"><div class="kv-label">Error Rate</div><div class="kv-value" style="color:${parseFloat(w.errorRate)>1?'var(--status-negative)':'inherit'}">${w.errorRate}</div></div>
+    </div>
+    ${w.health === 'error' ? `<div class="inline-alert alert-error"><span class="alert-icon">⚠</span><div class="alert-text"><div class="alert-title">Error Rate Elevated</div>Error rate ${w.errorRate} exceeds threshold (1%). Check recent deployments and model endpoint health.</div></div>` : ''}
+    ${w.health === 'warning' ? `<div class="inline-alert alert-warning"><span class="alert-icon">⚠</span><div class="alert-text"><div class="alert-title">Latency Regression Detected</div>P99 latency ${w.latencyP99} is above the 500ms threshold. Consider scaling the endpoint or investigating upstream dependencies.</div></div>` : ''}
+    <div class="chart-area">
+      <div class="chart-title">Invocation Count — Last 7 Days</div>
+      <div class="mini-chart">${w.costTrend.map((v,i) => {
+        const h = 20 + Math.random() * 60;
+        return `<div class="mini-bar" style="height:${h}px;flex:1;"></div>`;
+      }).join('')}</div>
+    </div>`;
+
+  // Guardrails tab
+  const grContent = w.guardrail === 'none'
+    ? `<div class="inline-alert alert-warning"><span class="alert-icon">⚠</span><div class="alert-text"><div class="alert-title">No guardrail configured</div>This workload has no content moderation or safety guardrails applied. <a href="#" style="color:var(--text-link);font-weight:600;" onclick="alert('Navigating to Bedrock Guardrails console...');return false;">Enable Guardrail →</a></div></div>`
+    : `<table class="nested-table">
+        <thead><tr><th>Guardrail</th><th>Type</th><th>Status</th><th>Last Triggered</th></tr></thead>
+        <tbody>
+          <tr><td style="font-weight:600;">${w.guardrailName}</td><td>Content Moderation</td><td><span class="status status-healthy"><span class="status-dot"></span>Active</span></td><td>${Math.floor(Math.random()*48)+1}h ago</td></tr>
+          ${w.guardrailName?.includes('PII') ? `<tr><td style="font-weight:600;">PII Detection</td><td>Data Protection</td><td><span class="status status-healthy"><span class="status-dot"></span>Active</span></td><td>${Math.floor(Math.random()*24)+1}h ago</td></tr>` : ''}
+        </tbody>
+      </table>
+      <div class="inline-alert alert-info" style="margin-top:16px;"><span class="alert-icon">ℹ️</span><div class="alert-text">Guardrail enforcement is active. ${Math.floor(Math.random()*50)+5} events blocked in the last 7 days.</div></div>`;
+  document.getElementById('tab-guardrails').innerHTML = grContent;
+
+  // Cost tab
+  const dailyCosts = w.costTrend;
+  const maxCost = Math.max(...dailyCosts);
+  document.getElementById('tab-cost').innerHTML = `
+    <div class="kv-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px;">
+      <div class="kv-item"><div class="kv-label">30-Day Cost</div><div class="kv-value">$${w.cost.toLocaleString()}</div></div>
+      <div class="kv-item"><div class="kv-label">Per Invocation</div><div class="kv-value">$${(w.cost / parseInt(w.invocations.replace(/[KM,]/g, m => m === 'K' ? '000' : m === 'M' ? '000000' : '')) * 1000).toFixed(4)}</div></div>
+      <div class="kv-item"><div class="kv-label">Trend</div><div class="kv-value" style="color:var(--status-warning);">↑ ${Math.floor(Math.random()*20+5)}%</div></div>
+      <div class="kv-item"><div class="kv-label">Optimization</div><div class="kv-value" style="color:var(--status-positive);">${w.cost > 2000 ? 'Batch eligible' : 'Optimal'}</div></div>
+    </div>
+    <div class="chart-area">
+      <div class="chart-title">Daily Cost — Last 7 Days</div>
+      <div class="mini-chart">${dailyCosts.map(v => `<div class="mini-bar" style="height:${Math.max(8,(v/maxCost)*80)}px;flex:1;background:var(--aws-anchor);"></div>`).join('')}</div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-secondary);margin-top:4px;">
+        <span>May 12</span><span>May 13</span><span>May 14</span><span>May 15</span><span>May 16</span><span>May 17</span><span>May 18</span>
+      </div>
+    </div>`;
+
+  // Timeline tab
+  const events = [
+    { time: 'May 18, 14:32 UTC', event: `<strong>InvokeModel</strong> called by role/${w.team.replace(/\s/g,'-').toLowerCase()}-prod`, type: 'api' },
+    { time: 'May 18, 09:15 UTC', event: `<strong>UpdateEndpoint</strong> — instance count scaled from 2 to 3`, type: 'config' },
+    { time: 'May 17, 22:01 UTC', event: `<strong>GuardrailBlocked</strong> — content moderation triggered (toxic content)`, type: 'guardrail' },
+    { time: 'May 17, 16:44 UTC', event: `<strong>CreateModelVersion</strong> — new model artifact deployed`, type: 'deploy' },
+    { time: 'May 16, 11:20 UTC', event: `<strong>TagResource</strong> — added tag team=${w.team}`, type: 'config' },
+  ];
+  document.getElementById('tab-timeline').innerHTML = events.map(e =>
+    `<div class="timeline-item"><div class="tl-time">${e.time}</div><div class="timeline-dot"></div><div class="tl-event">${e.event}</div></div>`
+  ).join('');
+
+  // Show panel
+  document.getElementById('splitPanel').classList.add('open');
+  document.getElementById('mainContent').classList.add('split-open');
+  switchTab('overview', document.querySelector('.split-tab[data-tab="overview"]'));
+}
+
+function closeSplitPanel() {
+  document.getElementById('splitPanel').classList.remove('open');
+  document.getElementById('mainContent').classList.remove('split-open');
+  selectedWorkload = null;
+  renderTable();
+}
+
+function switchTab(tab, el) {
+  document.querySelectorAll('.split-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById(`tab-${tab}`).classList.add('active');
+}
+
+// ===== PROPERTY FILTER =====
+const FILTER_OPTIONS = [
+  { prop: 'service', val: 'Bedrock', display: 'Service = Bedrock' },
+  { prop: 'service', val: 'SageMaker', display: 'Service = SageMaker' },
+  { prop: 'health', val: 'healthy', display: 'Health = Healthy' },
+  { prop: 'health', val: 'warning', display: 'Health = Warning' },
+  { prop: 'health', val: 'error', display: 'Health = Error' },
+  { prop: 'guardrail', val: 'active', display: 'Guardrail = Active' },
+  { prop: 'guardrail', val: 'none', display: 'Guardrail = None' },
+  { prop: 'account', val: 'prod-main', display: 'Account = prod-main' },
+  { prop: 'account', val: 'ml-workloads', display: 'Account = ml-workloads' },
+  { prop: 'account', val: 'dev-sandbox', display: 'Account = dev-sandbox' },
+  { prop: 'account', val: 'observability', display: 'Account = observability' },
+];
+
+function showSuggestions() {
+  const el = document.getElementById('filterSuggestions');
+  renderSuggestions('');
+  el.style.display = 'block';
+}
+function hideSuggestions() { document.getElementById('filterSuggestions').style.display = 'none'; }
+
+function filterSuggestions() {
+  const q = document.getElementById('filterInput').value.toLowerCase();
+  renderSuggestions(q);
+}
+
+function renderSuggestions(q) {
+  const el = document.getElementById('filterSuggestions');
+  const opts = FILTER_OPTIONS.filter(o => !activeFilters.some(f => f.prop === o.prop && f.val === o.val));
+  const filtered = q ? opts.filter(o => o.display.toLowerCase().includes(q)) : opts;
+  el.innerHTML = filtered.map(o =>
+    `<div class="filter-suggestion" onmousedown="addFilter('${o.prop}','${o.val}','${o.display}')">${o.display}</div>`
+  ).join('');
+}
+
+function addFilter(prop, val, display) {
+  activeFilters.push({ prop, val, display });
+  document.getElementById('filterInput').value = '';
+  hideSuggestions();
+  renderFilters();
+  renderTable();
+}
+
+function removeFilter(idx) {
+  activeFilters.splice(idx, 1);
+  renderFilters();
+  renderTable();
+}
+
+function renderFilters() {
+  document.getElementById('activeFilters').innerHTML = activeFilters.map((f, i) =>
+    `<span class="filter-token">${f.display} <button class="remove-token" onclick="removeFilter(${i})">✕</button></span>`
+  ).join('');
+}
+
+// ===== DROPDOWN =====
+function toggleDropdown() {
+  document.getElementById('actionsDropdown').classList.toggle('open');
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('.btn-dropdown')) {
+    document.querySelectorAll('.btn-dropdown').forEach(d => d.classList.remove('open'));
+  }
+});
+
+// ===== DATE RANGE =====
+document.querySelectorAll('.drp-option').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.drp-option').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+
+// ===== NAV =====
+document.querySelectorAll('.nav-item[data-page]').forEach(item => {
+  item.addEventListener('click', function() {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+
+// ===== SCROLL TO NEW =====
+function scrollToNewWorkloads() {
+  addFilter('health', 'healthy', 'Health = Healthy');
+  // flash new items
+  document.getElementById('flashbar').style.display = 'none';
+}
+
+// ===== INIT =====
+renderTable();
+// Auto-sort by health (errors first)
+currentSort = { col: 'health', dir: 'asc' };
+renderTable();
+</script>
+
+</body>
+</html>

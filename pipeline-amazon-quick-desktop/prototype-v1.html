@@ -1,0 +1,2079 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quick Desktop AI Control Tower — Prototype v1</title>
+<style>
+/* ===== CSS CUSTOM PROPERTIES ===== */
+:root {
+  --sidebar-bg: #0f1b2d;
+  --sidebar-text: #d1d5db;
+  --sidebar-active: #0972d3;
+  --sidebar-hover: #1a2940;
+  --sidebar-width: 240px;
+  --header-height: 56px;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --radius: 8px;
+  --radius-sm: 4px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+  --shadow-lg: 0 10px 30px rgba(0,0,0,0.15);
+  --transition: 0.2s ease;
+}
+[data-theme="light"] {
+  --bg: #f2f3f3;
+  --bg-card: #ffffff;
+  --text: #16191f;
+  --text-secondary: #5f6b7a;
+  --text-muted: #8c97a6;
+  --border: #e1e4e8;
+  --border-light: #eaeded;
+  --primary: #0972d3;
+  --primary-hover: #065a9e;
+  --primary-bg: #f0f7ff;
+  --success: #037f0c;
+  --success-bg: #ecfaed;
+  --warning: #8a6b0f;
+  --warning-bg: #fef8e7;
+  --danger: #d91515;
+  --danger-bg: #fdf0f0;
+  --info: #0972d3;
+  --info-bg: #f0f7ff;
+  --badge-approved: #037f0c;
+  --badge-approved-bg: #ecfaed;
+  --badge-unapproved: #d91515;
+  --badge-unapproved-bg: #fdf0f0;
+  --badge-monitored: #8a6b0f;
+  --badge-monitored-bg: #fef8e7;
+  --badge-low: #0972d3;
+  --badge-low-bg: #f0f7ff;
+  --badge-medium: #8a6b0f;
+  --badge-medium-bg: #fef8e7;
+  --badge-high: #d91515;
+  --badge-high-bg: #fdf0f0;
+  --split-bg: #ffffff;
+  --modal-overlay: rgba(0,0,0,0.5);
+  --input-bg: #ffffff;
+  --input-border: #aab7b8;
+  --table-stripe: #fafafa;
+  --table-hover: #f0f7ff;
+  --sparkline: #0972d3;
+}
+[data-theme="dark"] {
+  --bg: #0f1b2d;
+  --bg-card: #1a2940;
+  --text: #e9ebed;
+  --text-secondary: #8d99a8;
+  --text-muted: #5f6b7a;
+  --border: #2a3f5f;
+  --border-light: #233351;
+  --primary: #539fe5;
+  --primary-hover: #7ab4ed;
+  --primary-bg: #0f2940;
+  --success: #2ea043;
+  --success-bg: #0d2818;
+  --warning: #d4a72c;
+  --warning-bg: #2d2200;
+  --danger: #f85149;
+  --danger-bg: #3b1014;
+  --info: #539fe5;
+  --info-bg: #0f2940;
+  --badge-approved: #2ea043;
+  --badge-approved-bg: #0d2818;
+  --badge-unapproved: #f85149;
+  --badge-unapproved-bg: #3b1014;
+  --badge-monitored: #d4a72c;
+  --badge-monitored-bg: #2d2200;
+  --badge-low: #539fe5;
+  --badge-low-bg: #0f2940;
+  --badge-medium: #d4a72c;
+  --badge-medium-bg: #2d2200;
+  --badge-high: #f85149;
+  --badge-high-bg: #3b1014;
+  --split-bg: #1a2940;
+  --modal-overlay: rgba(0,0,0,0.7);
+  --input-bg: #233351;
+  --input-border: #3d5a80;
+  --table-stripe: #162236;
+  --table-hover: #0f2940;
+  --sparkline: #539fe5;
+  --sidebar-bg: #0a1220;
+  --sidebar-hover: #162236;
+}
+
+/* ===== RESET & BASE ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 14px; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  overflow: hidden;
+  height: 100vh;
+}
+a { color: var(--primary); text-decoration: none; }
+a:hover { text-decoration: underline; }
+button { cursor: pointer; font-family: var(--font); }
+
+/* ===== LAYOUT ===== */
+.app { display: flex; height: 100vh; }
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+  width: var(--sidebar-width);
+  min-width: var(--sidebar-width);
+  background: var(--sidebar-bg);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  z-index: 100;
+}
+.sidebar-logo {
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sidebar-logo .logo-icon {
+  width: 28px; height: 28px;
+  background: var(--primary);
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-weight: 700; font-size: 13px;
+}
+.sidebar-logo .logo-text {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+.sidebar-logo .logo-sub { color: #8d99a8; font-size: 11px; font-weight: 400; }
+.sidebar-section { padding: 12px 0 4px; }
+.sidebar-section-label {
+  padding: 0 20px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #5f6b7a;
+  margin-bottom: 4px;
+}
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 20px;
+  color: var(--sidebar-text);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+  border-left: 3px solid transparent;
+}
+.sidebar-item:hover {
+  background: var(--sidebar-hover);
+  color: #fff;
+}
+.sidebar-item.active {
+  background: rgba(9,114,211,0.15);
+  color: #fff;
+  border-left-color: var(--sidebar-active);
+}
+.sidebar-item .nav-icon { width: 18px; text-align: center; font-size: 15px; flex-shrink: 0; }
+.sidebar-item .nav-badge {
+  margin-left: auto;
+  background: var(--danger);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+
+/* ===== MAIN CONTENT ===== */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.header {
+  height: var(--header-height);
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  flex-shrink: 0;
+}
+.header-left { display: flex; align-items: center; gap: 12px; }
+.breadcrumb { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-secondary); }
+.breadcrumb .sep { color: var(--text-muted); }
+.breadcrumb .current { color: var(--text); font-weight: 600; }
+.header-right { display: flex; align-items: center; gap: 12px; }
+.header-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  min-width: 200px;
+}
+.header-search input {
+  border: none; background: none; outline: none; color: var(--text); font-size: 13px; width: 100%; font-family: var(--font);
+}
+.header-search kbd {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--font);
+}
+.btn-icon {
+  width: 34px; height: 34px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-secondary);
+  font-size: 16px;
+  transition: all var(--transition);
+}
+.btn-icon:hover { background: var(--bg); color: var(--text); }
+
+.content { flex: 1; overflow-y: auto; padding: 24px; position: relative; }
+
+/* ===== PAGE CONTAINERS ===== */
+.page { display: none; }
+.page.active { display: block; }
+
+/* ===== COMMON UI COMPONENTS ===== */
+.page-title { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+.page-desc { color: var(--text-secondary); font-size: 13px; margin-bottom: 20px; }
+
+/* Cards */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.card-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.card-header h3 { font-size: 15px; font-weight: 600; }
+.card-body { padding: 20px; }
+
+/* KPI Cards */
+.kpi-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 20px; }
+.kpi-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  box-shadow: var(--shadow);
+}
+.kpi-label { font-size: 12px; color: var(--text-secondary); font-weight: 500; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px; }
+.kpi-value { font-size: 28px; font-weight: 700; line-height: 1.2; display: flex; align-items: baseline; gap: 6px; }
+.kpi-value .kpi-unit { font-size: 14px; font-weight: 500; color: var(--text-secondary); }
+.kpi-change { font-size: 12px; margin-top: 4px; }
+.kpi-change.up { color: var(--success); }
+.kpi-change.down { color: var(--danger); }
+.kpi-sparkline { margin-top: 8px; }
+.kpi-sparkline svg { width: 100%; height: 30px; }
+
+/* Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.badge-approved { background: var(--badge-approved-bg); color: var(--badge-approved); }
+.badge-unapproved { background: var(--badge-unapproved-bg); color: var(--badge-unapproved); }
+.badge-monitored { background: var(--badge-monitored-bg); color: var(--badge-monitored); }
+.badge-blocked { background: var(--badge-unapproved-bg); color: var(--badge-unapproved); }
+.badge-low { background: var(--badge-low-bg); color: var(--badge-low); }
+.badge-medium { background: var(--badge-medium-bg); color: var(--badge-medium); }
+.badge-high { background: var(--badge-high-bg); color: var(--badge-high); }
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid transparent;
+  transition: all var(--transition);
+}
+.btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+.btn-primary:hover { background: var(--primary-hover); }
+.btn-secondary { background: var(--bg-card); color: var(--text); border-color: var(--border); }
+.btn-secondary:hover { background: var(--bg); }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+
+/* Tables */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+thead th {
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  border-bottom: 2px solid var(--border);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+thead th:hover { color: var(--text); }
+thead th .sort-arrow { font-size: 10px; margin-left: 4px; opacity: 0.4; }
+thead th.sorted .sort-arrow { opacity: 1; color: var(--primary); }
+tbody tr { border-bottom: 1px solid var(--border-light); transition: background var(--transition); }
+tbody tr:nth-child(even) { background: var(--table-stripe); }
+tbody tr:hover { background: var(--table-hover); cursor: pointer; }
+tbody td { padding: 10px 14px; font-size: 13px; white-space: nowrap; }
+
+/* Tabs */
+.tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 16px; }
+.tab-btn {
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: all var(--transition);
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+.tab-btn .tab-count {
+  background: var(--bg);
+  padding: 1px 7px;
+  border-radius: 10px;
+  font-size: 11px;
+  margin-left: 6px;
+  font-weight: 600;
+}
+
+/* Pagination */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.pagination-btns { display: flex; gap: 4px; }
+.page-btn {
+  width: 32px; height: 32px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+  color: var(--text-secondary);
+  transition: all var(--transition);
+}
+.page-btn:hover { background: var(--bg); color: var(--text); }
+.page-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Split Panel */
+.split-panel {
+  position: fixed;
+  top: 0; right: -480px;
+  width: 480px;
+  height: 100vh;
+  background: var(--split-bg);
+  border-left: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  z-index: 200;
+  transition: right 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+.split-panel.open { right: 0; }
+.split-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+.split-header h3 { font-size: 16px; font-weight: 600; }
+.split-close { background: none; border: none; font-size: 20px; color: var(--text-secondary); cursor: pointer; padding: 4px; }
+.split-close:hover { color: var(--text); }
+.split-tabs { display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.split-tab {
+  padding: 10px 16px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+}
+.split-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+.split-body { flex: 1; overflow-y: auto; padding: 20px; }
+.split-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.3);
+  z-index: 199;
+  display: none;
+}
+.split-overlay.open { display: block; }
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: var(--modal-overlay);
+  z-index: 300;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  width: 440px;
+  max-width: 90vw;
+}
+.modal-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.modal-header h3 { font-size: 16px; font-weight: 600; }
+.modal-close { background: none; border: none; font-size: 20px; color: var(--text-secondary); cursor: pointer; }
+.modal-body { padding: 20px; }
+.modal-footer {
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* Radio group */
+.radio-group { display: flex; flex-direction: column; gap: 10px; }
+.radio-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.radio-option:hover { border-color: var(--primary); background: var(--primary-bg); }
+.radio-option input[type="radio"] { margin-top: 2px; accent-color: var(--primary); }
+.radio-option .radio-label { font-weight: 500; font-size: 13px; }
+.radio-option .radio-desc { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+
+/* Grids */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+/* Alert */
+.alert-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+  border-left: 3px solid;
+}
+.alert-item.alert-danger { background: var(--danger-bg); border-color: var(--danger); }
+.alert-item.alert-warning { background: var(--warning-bg); border-color: var(--warning); }
+.alert-item.alert-info { background: var(--info-bg); border-color: var(--info); }
+.alert-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.alert-content { flex: 1; }
+.alert-title { font-weight: 600; font-size: 13px; }
+.alert-desc { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+.alert-time { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+/* Progress */
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+/* CSS Charts */
+.bar-chart { display: flex; flex-direction: column; gap: 10px; }
+.bar-row { display: flex; align-items: center; gap: 12px; }
+.bar-label { width: 120px; font-size: 12px; font-weight: 500; text-align: right; flex-shrink: 0; }
+.bar-track { flex: 1; height: 24px; background: var(--border-light); border-radius: var(--radius-sm); overflow: hidden; position: relative; }
+.bar-fill { height: 100%; border-radius: var(--radius-sm); display: flex; align-items: center; padding-left: 8px; font-size: 11px; color: #fff; font-weight: 600; min-width: 40px; transition: width 0.5s ease; }
+.bar-value { font-size: 12px; width: 60px; text-align: right; font-weight: 600; flex-shrink: 0; }
+
+/* Stacked bar */
+.stacked-bar { display: flex; height: 32px; border-radius: var(--radius-sm); overflow: hidden; }
+.stacked-segment { display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: #fff; min-width: 30px; }
+
+/* Maturity cards */
+.maturity-card {
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  text-align: center;
+  transition: all var(--transition);
+}
+.maturity-card.current {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-bg);
+}
+.maturity-level { font-size: 28px; font-weight: 700; color: var(--primary); }
+.maturity-title { font-size: 14px; font-weight: 600; margin-top: 4px; }
+.maturity-desc { font-size: 12px; color: var(--text-secondary); margin-top: 8px; }
+
+/* Detail rows */
+.detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-light); }
+.detail-label { font-size: 12px; color: var(--text-secondary); }
+.detail-value { font-size: 13px; font-weight: 500; }
+
+/* Timeline */
+.timeline-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border-light); }
+.timeline-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
+.timeline-content { flex: 1; }
+.timeline-text { font-size: 13px; }
+.timeline-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+/* Filter bar */
+.filter-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.filter-input {
+  flex: 1;
+  min-width: 200px;
+  padding: 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--input-bg);
+  color: var(--text);
+  font-size: 13px;
+  font-family: var(--font);
+  outline: none;
+}
+.filter-input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-bg); }
+
+/* Connector cards */
+.connector-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  transition: all var(--transition);
+}
+.connector-card:hover { box-shadow: var(--shadow-md); }
+.connector-logo {
+  width: 48px; height: 48px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; font-weight: 700; color: #fff;
+}
+.connector-name { font-weight: 600; font-size: 14px; }
+.connector-desc { font-size: 12px; color: var(--text-secondary); }
+.connector-status { font-size: 11px; font-weight: 600; }
+
+/* Template cards */
+.template-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  transition: all var(--transition);
+}
+.template-card:hover { box-shadow: var(--shadow-md); }
+.template-icon { font-size: 24px; margin-bottom: 8px; }
+.template-title { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+.template-desc { font-size: 12px; color: var(--text-secondary); margin-bottom: 12px; }
+
+/* Toggle switch */
+.toggle { position: relative; display: inline-block; width: 40px; height: 22px; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+  position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+  background: var(--border);
+  border-radius: 11px;
+  transition: 0.3s;
+}
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  height: 16px; width: 16px;
+  left: 3px; bottom: 3px;
+  background: #fff;
+  border-radius: 50%;
+  transition: 0.3s;
+}
+.toggle input:checked + .toggle-slider { background: var(--primary); }
+.toggle input:checked + .toggle-slider::before { transform: translateX(18px); }
+
+/* Activity feed */
+.activity-item { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border-light); align-items: flex-start; }
+.activity-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 600; color: #fff; flex-shrink: 0;
+}
+.activity-text { font-size: 13px; }
+.activity-text strong { font-weight: 600; }
+.activity-time { font-size: 11px; color: var(--text-muted); }
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1200px) {
+  .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <nav class="sidebar" role="navigation" aria-label="AI Control Tower navigation">
+    <div class="sidebar-logo">
+      <div class="logo-icon">Q</div>
+      <div>
+        <div class="logo-text">Quick Desktop</div>
+        <div class="logo-sub">AI Control Tower</div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Overview</div>
+      <div class="sidebar-item active" data-page="command-center">
+        <span class="nav-icon">&#9673;</span> Command Center
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Manage</div>
+      <div class="sidebar-item" data-page="inventory">
+        <span class="nav-icon">&#9776;</span> AI Inventory
+        <span class="nav-badge">7</span>
+      </div>
+      <div class="sidebar-item" data-page="governance">
+        <span class="nav-icon">&#9745;</span> Governance
+      </div>
+      <div class="sidebar-item" data-page="security">
+        <span class="nav-icon">&#9888;</span> Security & Risk
+        <span class="nav-badge">3</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Analyze</div>
+      <div class="sidebar-item" data-page="cost">
+        <span class="nav-icon">&#36;</span> Cost Attribution
+      </div>
+      <div class="sidebar-item" data-page="adoption">
+        <span class="nav-icon">&#9650;</span> Adoption & Maturity
+      </div>
+      <div class="sidebar-item" data-page="audit">
+        <span class="nav-icon">&#9201;</span> Activity Audit Log
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Configure</div>
+      <div class="sidebar-item" data-page="admin">
+        <span class="nav-icon">&#9881;</span> Admin Console
+      </div>
+      <div class="sidebar-item" data-page="marketplace">
+        <span class="nav-icon">&#10070;</span> Integration Marketplace
+      </div>
+      <div class="sidebar-item" data-page="compliance">
+        <span class="nav-icon">&#9998;</span> Compliance Reports
+      </div>
+      <div class="sidebar-item" data-page="enforcement">
+        <span class="nav-icon">&#9889;</span> Enforcement Rules
+      </div>
+      <div class="sidebar-item" data-page="roi">
+        <span class="nav-icon">&#10004;</span> AI ROI Insights
+      </div>
+      <div class="sidebar-item" data-page="templates">
+        <span class="nav-icon">&#9634;</span> Policy Templates
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN AREA -->
+  <main class="main" role="main" aria-label="AI Control Tower">
+    <!-- HEADER -->
+    <header class="header" role="banner">
+      <div class="header-left">
+        <div class="breadcrumb">
+          <span>AI Control Tower</span>
+          <span class="sep">/</span>
+          <span class="current" id="breadcrumb-current">Command Center</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="header-search">
+          <span>&#128269;</span>
+          <input type="text" id="global-search" placeholder="Search tools, policies, teams..." />
+          <kbd>/</kbd>
+        </div>
+        <button class="btn-icon" id="dark-mode-toggle" title="Toggle dark mode">&#9789;</button>
+        <button class="btn-icon" title="Notifications">&#128276;</button>
+        <div style="width:32px;height:32px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;">JD</div>
+      </div>
+    </header>
+
+    <!-- CONTENT -->
+    <div class="content">
+
+      <!-- =============== PAGE 1: COMMAND CENTER =============== -->
+      <div class="page active" id="page-command-center">
+        <h1 class="page-title">Command Center</h1>
+        <p class="page-desc">Real-time visibility across your organization's AI tool landscape.</p>
+
+        <!-- KPI Bar -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-label">Total AI Tools</div>
+            <div class="kpi-value">247</div>
+            <div class="kpi-change up">+12 this month</div>
+            <div class="kpi-sparkline"><svg viewBox="0 0 100 30"><polyline points="0,25 20,20 40,22 60,15 80,12 100,8" fill="none" stroke="var(--sparkline)" stroke-width="2"/></svg></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Monthly Spend</div>
+            <div class="kpi-value">$182K<span class="kpi-unit">/mo</span></div>
+            <div class="kpi-change up">+8.3% vs last month</div>
+            <div class="kpi-sparkline"><svg viewBox="0 0 100 30"><polyline points="0,28 20,24 40,22 60,18 80,14 100,10" fill="none" stroke="var(--sparkline)" stroke-width="2"/></svg></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Governed</div>
+            <div class="kpi-value">72%</div>
+            <div class="kpi-change up">+5% from Q1</div>
+            <div class="kpi-sparkline"><svg viewBox="0 0 100 30"><polyline points="0,28 20,22 40,18 60,14 80,11 100,8" fill="none" stroke="var(--sparkline)" stroke-width="2"/></svg></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Active Risks</div>
+            <div class="kpi-value" style="color:var(--danger);">3</div>
+            <div class="kpi-change down">+1 since yesterday</div>
+            <div class="kpi-sparkline"><svg viewBox="0 0 100 30"><polyline points="0,20 20,18 40,22 60,14 80,10 100,12" fill="none" stroke="var(--danger)" stroke-width="2"/></svg></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Maturity Level</div>
+            <div class="kpi-value">Level 3</div>
+            <div class="kpi-change" style="color:var(--text-secondary);">Standardized</div>
+            <div style="margin-top:8px;">
+              <div class="progress-bar"><div class="progress-fill" style="width:60%;background:var(--primary);"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Shadow AI Alerts -->
+        <div class="card" style="margin-bottom:20px;">
+          <div class="card-header">
+            <h3>&#9888; Shadow AI Alerts</h3>
+            <span class="badge badge-unapproved">4 Active</span>
+          </div>
+          <div class="card-body" style="padding:12px 20px;">
+            <div class="alert-item alert-danger">
+              <span class="alert-icon">&#9888;</span>
+              <div class="alert-content">
+                <div class="alert-title">Claude Pro (Personal) detected on 18 engineering devices</div>
+                <div class="alert-desc">Unapproved tool transmitting code snippets outside corporate boundary. High data-exfiltration risk.</div>
+                <div class="alert-time">Detected 2 hours ago via Quick Desktop agent</div>
+              </div>
+            </div>
+            <div class="alert-item alert-danger">
+              <span class="alert-icon">&#9888;</span>
+              <div class="alert-content">
+                <div class="alert-title">ChatGPT Plus (Personal) used by Finance team with sensitive data</div>
+                <div class="alert-desc">15 users accessing personal OpenAI accounts. PCI-DSS data detected in prompts.</div>
+                <div class="alert-time">Detected 5 hours ago via Quick Desktop agent</div>
+              </div>
+            </div>
+            <div class="alert-item alert-warning">
+              <span class="alert-icon">&#9888;</span>
+              <div class="alert-content">
+                <div class="alert-title">Notion AI adoption growing in HR without governance</div>
+                <div class="alert-desc">14 users added Notion AI. Employee PII detected in AI-generated summaries.</div>
+                <div class="alert-time">Detected 1 day ago</div>
+              </div>
+            </div>
+            <div class="alert-item alert-warning">
+              <span class="alert-icon">&#9888;</span>
+              <div class="alert-content">
+                <div class="alert-title">Perplexity Pro usage in Legal department</div>
+                <div class="alert-desc">6 attorneys using Perplexity for case research. Privileged information risk.</div>
+                <div class="alert-time">Detected 2 days ago</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dimension Summary + Activity -->
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header"><h3>Dimensions at a Glance</h3></div>
+            <div class="card-body">
+              <div style="display:flex;flex-direction:column;gap:14px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--bg);border-radius:var(--radius-sm);cursor:pointer;" onclick="navigateTo('inventory')">
+                  <div><div style="font-weight:600;font-size:13px;">AI Inventory</div><div style="font-size:12px;color:var(--text-secondary);">18 tools tracked, 7 unapproved</div></div>
+                  <span style="color:var(--text-muted);">&#10132;</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--bg);border-radius:var(--radius-sm);cursor:pointer;" onclick="navigateTo('governance')">
+                  <div><div style="font-weight:600;font-size:13px;">Governance</div><div style="font-size:12px;color:var(--text-secondary);">6 active policies, 72% compliance</div></div>
+                  <span style="color:var(--text-muted);">&#10132;</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--bg);border-radius:var(--radius-sm);cursor:pointer;" onclick="navigateTo('security')">
+                  <div><div style="font-weight:600;font-size:13px;">Security & Risk</div><div style="font-size:12px;color:var(--text-secondary);">3 active risk alerts, 2 critical</div></div>
+                  <span style="color:var(--text-muted);">&#10132;</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--bg);border-radius:var(--radius-sm);cursor:pointer;" onclick="navigateTo('cost')">
+                  <div><div style="font-weight:600;font-size:13px;">Cost Attribution</div><div style="font-size:12px;color:var(--text-secondary);">$182K/mo across 5 vendors</div></div>
+                  <span style="color:var(--text-muted);">&#10132;</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><h3>Recent Activity</h3></div>
+            <div class="card-body" style="padding:8px 20px;">
+              <div class="activity-item">
+                <div class="activity-avatar" style="background:#0972d3;">SM</div>
+                <div>
+                  <div class="activity-text"><strong>Sarah Mitchell</strong> approved Grammarly AI for Marketing team</div>
+                  <div class="activity-time">12 minutes ago</div>
+                </div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-avatar" style="background:#d91515;">SY</div>
+                <div>
+                  <div class="activity-text"><strong>System</strong> detected Claude Pro (Personal) on 3 new devices</div>
+                  <div class="activity-time">2 hours ago</div>
+                </div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-avatar" style="background:#037f0c;">JC</div>
+                <div>
+                  <div class="activity-text"><strong>James Chen</strong> created policy "No PII in AI Prompts"</div>
+                  <div class="activity-time">4 hours ago</div>
+                </div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-avatar" style="background:#8a6b0f;">AL</div>
+                <div>
+                  <div class="activity-text"><strong>Anna Lopez</strong> escalated Midjourney for review</div>
+                  <div class="activity-time">Yesterday at 3:42 PM</div>
+                </div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-avatar" style="background:#0972d3;">RK</div>
+                <div>
+                  <div class="activity-text"><strong>Raj Kumar</strong> connected AWS Bedrock integration</div>
+                  <div class="activity-time">Yesterday at 11:15 AM</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- =============== PAGE 2: AI INVENTORY =============== -->
+      <div class="page" id="page-inventory">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
+          <div>
+            <h1 class="page-title">AI Inventory</h1>
+            <p class="page-desc">Complete registry of AI tools discovered across your organization.</p>
+          </div>
+          <button class="btn btn-primary" onclick="openPolicyModal(null)">+ Add Tool</button>
+        </div>
+
+        <div class="tabs" id="inventory-tabs">
+          <button class="tab-btn active" data-tab="all">All<span class="tab-count" id="tab-count-all">18</span></button>
+          <button class="tab-btn" data-tab="shadow">Shadow AI<span class="tab-count" id="tab-count-shadow">7</span></button>
+          <button class="tab-btn" data-tab="approved">Approved<span class="tab-count" id="tab-count-approved">9</span></button>
+          <button class="tab-btn" data-tab="blocked">Monitored/Blocked<span class="tab-count" id="tab-count-blocked">2</span></button>
+        </div>
+
+        <div class="filter-bar">
+          <input type="text" class="filter-input" id="inventory-search" placeholder="Search by tool name, vendor, or team..." />
+        </div>
+
+        <div class="card">
+          <div class="table-wrap">
+            <table id="inventory-table">
+              <thead>
+                <tr>
+                  <th data-sort="name">Tool Name <span class="sort-arrow">&#9650;</span></th>
+                  <th data-sort="vendor">Vendor <span class="sort-arrow">&#9650;</span></th>
+                  <th data-sort="team">Team <span class="sort-arrow">&#9650;</span></th>
+                  <th data-sort="users">Users <span class="sort-arrow">&#9650;</span></th>
+                  <th data-sort="cost">Monthly Cost <span class="sort-arrow">&#9650;</span></th>
+                  <th data-sort="status">Status <span class="sort-arrow">&#9650;</span></th>
+                  <th data-sort="risk">Risk <span class="sort-arrow">&#9650;</span></th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="inventory-tbody"></tbody>
+            </table>
+          </div>
+          <div class="pagination" id="inventory-pagination" style="padding:12px 20px;"></div>
+        </div>
+      </div>
+
+      <!-- =============== PAGE 3: GOVERNANCE =============== -->
+      <div class="page" id="page-governance">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
+          <div>
+            <h1 class="page-title">Governance</h1>
+            <p class="page-desc">Define and manage AI usage policies across the organization.</p>
+          </div>
+          <button class="btn btn-primary" onclick="openCreatePolicyModal()">+ Create Policy</button>
+        </div>
+
+        <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px;">
+          <div class="kpi-card"><div class="kpi-label">Active Policies</div><div class="kpi-value">6</div></div>
+          <div class="kpi-card"><div class="kpi-label">Compliance Rate</div><div class="kpi-value" style="color:var(--success);">72%</div></div>
+          <div class="kpi-card"><div class="kpi-label">Pending Reviews</div><div class="kpi-value">4</div></div>
+          <div class="kpi-card"><div class="kpi-label">Policy Violations</div><div class="kpi-value" style="color:var(--danger);">8</div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3>Active Policies</h3></div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Policy Name</th>
+                  <th>Scope</th>
+                  <th>Enforcement</th>
+                  <th>Compliance</th>
+                  <th>Last Updated</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="governance-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- =============== PAGE 4: SECURITY & RISK =============== -->
+      <div class="page" id="page-security">
+        <h1 class="page-title">Security & Risk</h1>
+        <p class="page-desc">Monitor and mitigate risks from AI tool usage across your organization.</p>
+
+        <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px;">
+          <div class="kpi-card"><div class="kpi-label">Critical Risks</div><div class="kpi-value" style="color:var(--danger);">2</div></div>
+          <div class="kpi-card"><div class="kpi-label">Medium Risks</div><div class="kpi-value" style="color:var(--warning);">6</div></div>
+          <div class="kpi-card"><div class="kpi-label">Data Sensitivity Events</div><div class="kpi-value">23</div></div>
+          <div class="kpi-card"><div class="kpi-label">Avg Response Time</div><div class="kpi-value">4.2h</div></div>
+        </div>
+
+        <div class="card" style="margin-bottom:20px;">
+          <div class="card-header"><h3>Risk Alerts</h3></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Alert</th><th>Tool</th><th>Severity</th><th>Data Sensitivity</th><th>Detected</th><th>Status</th></tr></thead>
+              <tbody id="security-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3>Data Sensitivity Indicators</h3></div>
+          <div class="card-body">
+            <div class="bar-chart">
+              <div class="bar-row"><div class="bar-label">PII Detected</div><div class="bar-track"><div class="bar-fill" style="width:68%;background:var(--danger);">68%</div></div><div class="bar-value">23 events</div></div>
+              <div class="bar-row"><div class="bar-label">Source Code</div><div class="bar-track"><div class="bar-fill" style="width:45%;background:var(--warning);">45%</div></div><div class="bar-value">15 events</div></div>
+              <div class="bar-row"><div class="bar-label">Financial Data</div><div class="bar-track"><div class="bar-fill" style="width:32%;background:var(--warning);">32%</div></div><div class="bar-value">11 events</div></div>
+              <div class="bar-row"><div class="bar-label">Legal/Privileged</div><div class="bar-track"><div class="bar-fill" style="width:18%;background:var(--info);">18%</div></div><div class="bar-value">6 events</div></div>
+              <div class="bar-row"><div class="bar-label">Customer Data</div><div class="bar-track"><div class="bar-fill" style="width:25%;background:var(--warning);">25%</div></div><div class="bar-value">9 events</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- =============== PAGE 5: COST ATTRIBUTION =============== -->
+      <div class="page" id="page-cost">
+        <h1 class="page-title">Cost Attribution</h1>
+        <p class="page-desc">Track and optimize AI spending across vendors and teams.</p>
+
+        <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px;">
+          <div class="kpi-card"><div class="kpi-label">Total Monthly</div><div class="kpi-value">$23,820</div></div>
+          <div class="kpi-card"><div class="kpi-label">Approved Spend</div><div class="kpi-value" style="color:var(--success);">$19,640</div></div>
+          <div class="kpi-card"><div class="kpi-label">Shadow Spend</div><div class="kpi-value" style="color:var(--danger);">$4,180</div></div>
+          <div class="kpi-card"><div class="kpi-label">Cost per User</div><div class="kpi-value">$46.20</div></div>
+        </div>
+
+        <div class="grid-2" style="margin-bottom:20px;">
+          <div class="card">
+            <div class="card-header"><h3>Spend by Vendor</h3></div>
+            <div class="card-body">
+              <div style="margin-bottom:12px;">
+                <div class="stacked-bar">
+                  <div class="stacked-segment" style="width:33.6%;background:#ff9900;">AWS</div>
+                  <div class="stacked-segment" style="width:26.8%;background:#0078d4;">MSFT</div>
+                  <div class="stacked-segment" style="width:10.7%;background:#10a37f;">OpenAI</div>
+                  <div class="stacked-segment" style="width:14.5%;background:#d97706;">Others</div>
+                  <div class="stacked-segment" style="width:14.4%;background:#6b7280;">Shadow</div>
+                </div>
+              </div>
+              <div class="bar-chart">
+                <div class="bar-row"><div class="bar-label">AWS</div><div class="bar-track"><div class="bar-fill" style="width:72%;background:#ff9900;">$8,000</div></div><div class="bar-value">$8,000</div></div>
+                <div class="bar-row"><div class="bar-label">Microsoft</div><div class="bar-track"><div class="bar-fill" style="width:57%;background:#0078d4;">$6,390</div></div><div class="bar-value">$6,390</div></div>
+                <div class="bar-row"><div class="bar-label">OpenAI</div><div class="bar-track"><div class="bar-fill" style="width:23%;background:#10a37f;">$2,550</div></div><div class="bar-value">$2,550</div></div>
+                <div class="bar-row"><div class="bar-label">Jasper</div><div class="bar-track"><div class="bar-fill" style="width:22%;background:#d97706;">$2,400</div></div><div class="bar-value">$2,400</div></div>
+                <div class="bar-row"><div class="bar-label">Others</div><div class="bar-track"><div class="bar-fill" style="width:40%;background:#6b7280;">$4,480</div></div><div class="bar-value">$4,480</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><h3>Spend by Team</h3></div>
+            <div class="card-body">
+              <div class="bar-chart">
+                <div class="bar-row"><div class="bar-label">Engineering</div><div class="bar-track"><div class="bar-fill" style="width:73%;background:var(--primary);">$11,850</div></div><div class="bar-value">$11,850</div></div>
+                <div class="bar-row"><div class="bar-label">Sales</div><div class="bar-track"><div class="bar-fill" style="width:29%;background:#10a37f;">$4,650</div></div><div class="bar-value">$4,650</div></div>
+                <div class="bar-row"><div class="bar-label">Marketing</div><div class="bar-track"><div class="bar-fill" style="width:26%;background:#d97706;">$4,220</div></div><div class="bar-value">$4,220</div></div>
+                <div class="bar-row"><div class="bar-label">HR</div><div class="bar-track"><div class="bar-fill" style="width:11%;background:#8b5cf6;">$1,780</div></div><div class="bar-value">$1,780</div></div>
+                <div class="bar-row"><div class="bar-label">Finance</div><div class="bar-track"><div class="bar-fill" style="width:7%;background:#ec4899;">$1,200</div></div><div class="bar-value">$1,200</div></div>
+                <div class="bar-row"><div class="bar-label">Legal</div><div class="bar-track"><div class="bar-fill" style="width:1%;background:#6b7280;">$120</div></div><div class="bar-value">$120</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3>Cost Detail</h3></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Tool</th><th>Vendor</th><th>Team</th><th>Users</th><th>Monthly Cost</th><th>Cost/User</th><th>Trend</th></tr></thead>
+              <tbody id="cost-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- =============== PAGE 6: ADOPTION & MATURITY =============== -->
+      <div class="page" id="page-adoption">
+        <h1 class="page-title">Adoption & Maturity</h1>
+        <p class="page-desc">Track your organization's AI governance maturity journey.</p>
+
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:24px;" id="maturity-cards"></div>
+
+        <div class="card" style="margin-bottom:20px;">
+          <div class="card-header"><h3>Team Maturity Comparison</h3></div>
+          <div class="card-body">
+            <div class="bar-chart">
+              <div class="bar-row"><div class="bar-label">Engineering</div><div class="bar-track"><div class="bar-fill" style="width:80%;background:var(--primary);">Level 4</div></div><div class="bar-value">Managed</div></div>
+              <div class="bar-row"><div class="bar-label">Sales</div><div class="bar-track"><div class="bar-fill" style="width:60%;background:var(--success);">Level 3</div></div><div class="bar-value">Standardized</div></div>
+              <div class="bar-row"><div class="bar-label">Marketing</div><div class="bar-track"><div class="bar-fill" style="width:40%;background:var(--warning);">Level 2</div></div><div class="bar-value">Developing</div></div>
+              <div class="bar-row"><div class="bar-label">HR</div><div class="bar-track"><div class="bar-fill" style="width:40%;background:var(--warning);">Level 2</div></div><div class="bar-value">Developing</div></div>
+              <div class="bar-row"><div class="bar-label">Finance</div><div class="bar-track"><div class="bar-fill" style="width:60%;background:var(--success);">Level 3</div></div><div class="bar-value">Standardized</div></div>
+              <div class="bar-row"><div class="bar-label">Legal</div><div class="bar-track"><div class="bar-fill" style="width:20%;background:var(--danger);">Level 1</div></div><div class="bar-value">Ad Hoc</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3>Adoption Trends (Last 6 Months)</h3></div>
+          <div class="card-body">
+            <div class="grid-3">
+              <div style="text-align:center;padding:16px;">
+                <div style="font-size:36px;font-weight:700;color:var(--primary);">247</div>
+                <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">Total Tools (up from 198)</div>
+                <div class="kpi-sparkline"><svg viewBox="0 0 100 30"><polyline points="0,28 20,24 40,20 60,16 80,12 100,6" fill="none" stroke="var(--sparkline)" stroke-width="2"/></svg></div>
+              </div>
+              <div style="text-align:center;padding:16px;">
+                <div style="font-size:36px;font-weight:700;color:var(--success);">516</div>
+                <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">Active Users (up from 380)</div>
+                <div class="kpi-sparkline"><svg viewBox="0 0 100 30"><polyline points="0,26 20,22 40,18 60,14 80,10 100,5" fill="none" stroke="var(--success)" stroke-width="2"/></svg></div>
+              </div>
+              <div style="text-align:center;padding:16px;">
+                <div style="font-size:36px;font-weight:700;color:var(--warning);">72%</div>
+                <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">Governance Coverage (up from 54%)</div>
+                <div class="kpi-sparkline"><svg viewBox="0 0 100 30"><polyline points="0,28 20,22 40,18 60,14 80,10 100,8" fill="none" stroke="var(--warning)" stroke-width="2"/></svg></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- =============== PAGE 7: ADMIN CONSOLE =============== -->
+      <div class="page" id="page-admin">
+        <h1 class="page-title">Admin Console</h1>
+        <p class="page-desc">Manage integrations, notifications, and team settings.</p>
+
+        <div class="card" style="margin-bottom:20px;">
+          <div class="card-header"><h3>Connected Integrations</h3></div>
+          <div class="card-body">
+            <div class="grid-3" id="admin-integrations"></div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header"><h3>Notification Settings</h3></div>
+            <div class="card-body">
+              <div style="display:flex;flex-direction:column;gap:14px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <div><div style="font-weight:500;font-size:13px;">Shadow AI Detected</div><div style="font-size:12px;color:var(--text-secondary);">Alert when new unapproved tools are found</div></div>
+                  <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <div><div style="font-weight:500;font-size:13px;">Policy Violations</div><div style="font-size:12px;color:var(--text-secondary);">Real-time alerts for policy breaches</div></div>
+                  <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <div><div style="font-weight:500;font-size:13px;">Cost Threshold Alerts</div><div style="font-size:12px;color:var(--text-secondary);">Notify when spend exceeds budget</div></div>
+                  <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <div><div style="font-weight:500;font-size:13px;">Weekly Digest</div><div style="font-size:12px;color:var(--text-secondary);">Summary of AI activity and governance</div></div>
+                  <label class="toggle"><input type="checkbox"><span class="toggle-slider"></span></label>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <div><div style="font-weight:500;font-size:13px;">New Tool Requests</div><div style="font-size:12px;color:var(--text-secondary);">Approval workflows for new AI tools</div></div>
+                  <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><h3>Team Management</h3></div>
+            <div class="card-body">
+              <table>
+                <thead><tr><th>Team</th><th>Members</th><th>AI Tools</th><th>Admin</th></tr></thead>
+                <tbody>
+                  <tr><td>Engineering</td><td>89</td><td>7</td><td>Raj Kumar</td></tr>
+                  <tr><td>Sales</td><td>54</td><td>3</td><td>Lisa Park</td></tr>
+                  <tr><td>Marketing</td><td>32</td><td>5</td><td>Anna Lopez</td></tr>
+                  <tr><td>HR</td><td>18</td><td>3</td><td>David Kim</td></tr>
+                  <tr><td>Finance</td><td>24</td><td>2</td><td>Maria Santos</td></tr>
+                  <tr><td>Legal</td><td>12</td><td>1</td><td>Tom Bradley</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- =============== PAGE 8: ACTIVITY AUDIT LOG =============== -->
+      <div class="page" id="page-audit">
+        <h1 class="page-title">Activity Audit Log</h1>
+        <p class="page-desc">Complete log of governance actions, policy changes, and system events.</p>
+
+        <div class="filter-bar">
+          <input type="text" class="filter-input" id="audit-search" placeholder="Filter by action, user, or tool..." style="max-width:300px;" />
+          <select class="filter-input" id="audit-type-filter" style="max-width:180px;flex:none;">
+            <option value="all">All Types</option>
+            <option value="policy">Policy Changes</option>
+            <option value="detection">Shadow AI Detection</option>
+            <option value="approval">Approvals</option>
+            <option value="enforcement">Enforcement</option>
+          </select>
+        </div>
+
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Timestamp</th><th>Action</th><th>Type</th><th>User</th><th>Target</th><th>Details</th></tr></thead>
+              <tbody id="audit-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- =============== PAGE 9: INTEGRATION MARKETPLACE =============== -->
+      <div class="page" id="page-marketplace">
+        <h1 class="page-title">Integration Marketplace</h1>
+        <p class="page-desc">Connect your AI ecosystem. Discover and enable integrations.</p>
+
+        <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;color:var(--success);">&#10003; Connected</h3>
+        <div class="grid-3" style="margin-bottom:24px;" id="marketplace-connected"></div>
+
+        <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;color:var(--text-secondary);">Coming Soon</h3>
+        <div class="grid-4" id="marketplace-coming"></div>
+      </div>
+
+      <!-- =============== PAGE 10: COMPLIANCE REPORTS =============== -->
+      <div class="page" id="page-compliance">
+        <h1 class="page-title">Compliance Reports</h1>
+        <p class="page-desc">Generate compliance reports aligned with industry frameworks.</p>
+
+        <div class="grid-3" style="margin-bottom:24px;">
+          <div class="template-card">
+            <div class="template-icon">&#128203;</div>
+            <div class="template-title">NIST AI RMF Report</div>
+            <div class="template-desc">Comprehensive risk management framework assessment covering Govern, Map, Measure, and Manage functions.</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span class="badge badge-approved">Framework Ready</span>
+              <button class="btn btn-primary btn-sm">Generate Report</button>
+            </div>
+          </div>
+          <div class="template-card">
+            <div class="template-icon">&#127466;&#127482;</div>
+            <div class="template-title">EU AI Act Compliance</div>
+            <div class="template-desc">Assessment against EU AI Act requirements including risk classification, transparency obligations, and data governance.</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span class="badge badge-monitored">In Progress</span>
+              <button class="btn btn-primary btn-sm">Generate Report</button>
+            </div>
+          </div>
+          <div class="template-card">
+            <div class="template-icon">&#128274;</div>
+            <div class="template-title">SOC 2 AI Controls</div>
+            <div class="template-desc">AI-specific controls mapped to SOC 2 Trust Service Criteria for security, availability, and confidentiality.</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span class="badge badge-approved">Audit Ready</span>
+              <button class="btn btn-primary btn-sm">Generate Report</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3>Sample Report Preview: NIST AI RMF</h3></div>
+          <div class="card-body">
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              <div style="padding:14px;background:var(--bg);border-radius:var(--radius-sm);">
+                <div style="font-weight:600;font-size:13px;">1. Govern</div>
+                <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">AI governance policies established for 72% of tools. 6 active policies. Executive sponsor assigned. Cross-functional AI committee meets bi-weekly.</div>
+                <div style="margin-top:8px;"><div class="progress-bar"><div class="progress-fill" style="width:72%;background:var(--success);"></div></div></div>
+              </div>
+              <div style="padding:14px;background:var(--bg);border-radius:var(--radius-sm);">
+                <div style="font-weight:600;font-size:13px;">2. Map</div>
+                <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">AI inventory covers 247 tools. Shadow AI detection active. Risk categorization in place for all approved tools.</div>
+                <div style="margin-top:8px;"><div class="progress-bar"><div class="progress-fill" style="width:85%;background:var(--success);"></div></div></div>
+              </div>
+              <div style="padding:14px;background:var(--bg);border-radius:var(--radius-sm);">
+                <div style="font-weight:600;font-size:13px;">3. Measure</div>
+                <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">Cost tracking active. Usage metrics collected. Data sensitivity monitoring covers 65% of tools. ROI measurement in early stages.</div>
+                <div style="margin-top:8px;"><div class="progress-bar"><div class="progress-fill" style="width:55%;background:var(--warning);"></div></div></div>
+              </div>
+              <div style="padding:14px;background:var(--bg);border-radius:var(--radius-sm);">
+                <div style="font-weight:600;font-size:13px;">4. Manage</div>
+                <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">Enforcement rules cover approved tools. Incident response plan drafted. Continuous monitoring via Quick Desktop agents.</div>
+                <div style="margin-top:8px;"><div class="progress-bar"><div class="progress-fill" style="width:48%;background:var(--warning);"></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- =============== PAGE 11: ENFORCEMENT RULES =============== -->
+      <div class="page" id="page-enforcement">
+        <h1 class="page-title">Enforcement Rules</h1>
+        <p class="page-desc">Configure automated enforcement actions for AI tool usage.</p>
+
+        <div class="card" style="margin-bottom:20px;">
+          <div class="card-header">
+            <h3>Rule Builder</h3>
+            <button class="btn btn-primary btn-sm">+ Add Rule</button>
+          </div>
+          <div class="card-body">
+            <div style="display:flex;flex-direction:column;gap:14px;">
+              <div style="display:flex;align-items:center;gap:16px;padding:14px;background:var(--bg);border-radius:var(--radius-sm);border-left:3px solid var(--danger);">
+                <div style="flex:1;"><div style="font-weight:600;font-size:13px;">Block unapproved tools with high risk</div><div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">Immediately terminate access to high-risk shadow AI tools</div></div>
+                <span class="badge badge-unapproved">Kill Switch</span>
+                <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+              </div>
+              <div style="display:flex;align-items:center;gap:16px;padding:14px;background:var(--bg);border-radius:var(--radius-sm);border-left:3px solid var(--warning);">
+                <div style="flex:1;"><div style="font-weight:600;font-size:13px;">Warn users of medium-risk tools</div><div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">Show nudge notification when accessing medium-risk AI tools</div></div>
+                <span class="badge badge-monitored">Nudge</span>
+                <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+              </div>
+              <div style="display:flex;align-items:center;gap:16px;padding:14px;background:var(--bg);border-radius:var(--radius-sm);border-left:3px solid var(--danger);">
+                <div style="font-weight:600;font-size:13px;flex:1;"><div>Block PII in AI prompts</div><div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">Intercept and redact PII before sending to any AI tool</div></div>
+                <span class="badge badge-unapproved">Block</span>
+                <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+              </div>
+              <div style="display:flex;align-items:center;gap:16px;padding:14px;background:var(--bg);border-radius:var(--radius-sm);border-left:3px solid var(--info);">
+                <div style="flex:1;"><div style="font-weight:600;font-size:13px;">Log all AI tool usage</div><div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">Record prompts and responses for audit (approved tools only)</div></div>
+                <span class="badge badge-low">Monitor</span>
+                <label class="toggle"><input type="checkbox"><span class="toggle-slider"></span></label>
+              </div>
+              <div style="display:flex;align-items:center;gap:16px;padding:14px;background:var(--bg);border-radius:var(--radius-sm);border-left:3px solid var(--warning);">
+                <div style="flex:1;"><div style="font-weight:600;font-size:13px;">Require approval for new AI tools</div><div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">Gate new tool access behind manager + security review</div></div>
+                <span class="badge badge-monitored">Gate</span>
+                <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3>Policy Visualization</h3></div>
+          <div class="card-body" style="text-align:center;">
+            <svg viewBox="0 0 600 200" style="max-width:600px;width:100%;">
+              <rect x="10" y="10" width="130" height="60" rx="8" fill="var(--primary-bg)" stroke="var(--primary)" stroke-width="1.5"/>
+              <text x="75" y="35" text-anchor="middle" fill="var(--text)" font-size="11" font-weight="600">AI Tool Detected</text>
+              <text x="75" y="52" text-anchor="middle" fill="var(--text-secondary)" font-size="9">Quick Desktop Agent</text>
+
+              <line x1="140" y1="40" x2="190" y2="40" stroke="var(--border)" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+              <rect x="190" y="10" width="120" height="60" rx="8" fill="var(--warning-bg)" stroke="var(--warning)" stroke-width="1.5"/>
+              <text x="250" y="35" text-anchor="middle" fill="var(--text)" font-size="11" font-weight="600">Risk Assessment</text>
+              <text x="250" y="52" text-anchor="middle" fill="var(--text-secondary)" font-size="9">Auto-classify</text>
+
+              <line x1="310" y1="25" x2="370" y2="25" stroke="var(--border)" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+              <line x1="310" y1="55" x2="370" y2="55" stroke="var(--border)" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+              <rect x="370" y="0" width="110" height="40" rx="6" fill="var(--success-bg)" stroke="var(--success)" stroke-width="1.5"/>
+              <text x="425" y="24" text-anchor="middle" fill="var(--success)" font-size="10" font-weight="600">Low: Approve</text>
+
+              <rect x="370" y="45" width="110" height="40" rx="6" fill="var(--danger-bg)" stroke="var(--danger)" stroke-width="1.5"/>
+              <text x="425" y="69" text-anchor="middle" fill="var(--danger)" font-size="10" font-weight="600">High: Block</text>
+
+              <line x1="310" y1="40" x2="370" y2="120" stroke="var(--border)" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+              <rect x="370" y="95" width="110" height="40" rx="6" fill="var(--warning-bg)" stroke="var(--warning)" stroke-width="1.5"/>
+              <text x="425" y="119" text-anchor="middle" fill="var(--warning)" font-size="10" font-weight="600">Med: Nudge</text>
+
+              <defs><marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="var(--border)"/></marker></defs>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- =============== PAGE 12: AI ROI INSIGHTS =============== -->
+      <div class="page" id="page-roi">
+        <h1 class="page-title">AI ROI Insights</h1>
+        <p class="page-desc">Measure the business impact and productivity gains from AI adoption.</p>
+
+        <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px;">
+          <div class="kpi-card"><div class="kpi-label">Est. Productivity Gain</div><div class="kpi-value" style="color:var(--success);">23%</div><div class="kpi-change up">+4% vs last quarter</div></div>
+          <div class="kpi-card"><div class="kpi-label">Hours Saved / Week</div><div class="kpi-value">1,240</div><div class="kpi-change up">Across all teams</div></div>
+          <div class="kpi-card"><div class="kpi-label">Cost per Hour Saved</div><div class="kpi-value">$4.40</div><div class="kpi-change down">-$0.80 vs Q1</div></div>
+          <div class="kpi-card"><div class="kpi-label">ROI Ratio</div><div class="kpi-value" style="color:var(--success);">3.2x</div><div class="kpi-change up">Above target of 2.0x</div></div>
+        </div>
+
+        <div class="grid-2" style="margin-bottom:20px;">
+          <div class="card">
+            <div class="card-header"><h3>Productivity by Tool Category</h3></div>
+            <div class="card-body">
+              <div class="bar-chart">
+                <div class="bar-row"><div class="bar-label">Code Assistants</div><div class="bar-track"><div class="bar-fill" style="width:85%;background:var(--primary);">32% gain</div></div><div class="bar-value">520 hrs</div></div>
+                <div class="bar-row"><div class="bar-label">Writing / Content</div><div class="bar-track"><div class="bar-fill" style="width:60%;background:#10a37f;">24% gain</div></div><div class="bar-value">310 hrs</div></div>
+                <div class="bar-row"><div class="bar-label">Data Analysis</div><div class="bar-track"><div class="bar-fill" style="width:45%;background:#d97706;">18% gain</div></div><div class="bar-value">220 hrs</div></div>
+                <div class="bar-row"><div class="bar-label">Communication</div><div class="bar-track"><div class="bar-fill" style="width:30%;background:#8b5cf6;">12% gain</div></div><div class="bar-value">190 hrs</div></div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h3>ROI by Team</h3></div>
+            <div class="card-body">
+              <div class="bar-chart">
+                <div class="bar-row"><div class="bar-label">Engineering</div><div class="bar-track"><div class="bar-fill" style="width:90%;background:var(--primary);">4.1x ROI</div></div><div class="bar-value">$48.6K saved</div></div>
+                <div class="bar-row"><div class="bar-label">Sales</div><div class="bar-track"><div class="bar-fill" style="width:70%;background:#10a37f;">3.2x ROI</div></div><div class="bar-value">$14.9K saved</div></div>
+                <div class="bar-row"><div class="bar-label">Marketing</div><div class="bar-track"><div class="bar-fill" style="width:55%;background:#d97706;">2.5x ROI</div></div><div class="bar-value">$10.6K saved</div></div>
+                <div class="bar-row"><div class="bar-label">HR</div><div class="bar-track"><div class="bar-fill" style="width:40%;background:#8b5cf6;">1.8x ROI</div></div><div class="bar-value">$3.2K saved</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3>Correlation: AI Usage vs. Output Quality</h3></div>
+          <div class="card-body">
+            <div class="grid-3">
+              <div style="text-align:center;padding:16px;background:var(--bg);border-radius:var(--radius-sm);">
+                <div style="font-size:28px;font-weight:700;color:var(--success);">+34%</div>
+                <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">Code review pass rate (Copilot users)</div>
+              </div>
+              <div style="text-align:center;padding:16px;background:var(--bg);border-radius:var(--radius-sm);">
+                <div style="font-size:28px;font-weight:700;color:var(--success);">-28%</div>
+                <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">Content revision cycles (Jasper users)</div>
+              </div>
+              <div style="text-align:center;padding:16px;background:var(--bg);border-radius:var(--radius-sm);">
+                <div style="font-size:28px;font-weight:700;color:var(--success);">+41%</div>
+                <div style="font-size:12px;color:var(--text-secondary);margin-top:4px;">Meeting action item completion (Copilot M365)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- =============== PAGE 13: POLICY TEMPLATES =============== -->
+      <div class="page" id="page-templates">
+        <h1 class="page-title">Policy Templates</h1>
+        <p class="page-desc">Pre-built governance templates to accelerate your AI policy rollout.</p>
+
+        <div class="grid-3" id="policy-templates-grid"></div>
+      </div>
+
+    </div><!-- /content -->
+  </main><!-- /main -->
+</div><!-- /app -->
+<!-- SPLIT PANEL -->
+<div class="split-overlay" id="split-overlay"></div>
+<div class="split-panel" id="split-panel">
+  <div class="split-header">
+    <h3 id="split-title">Tool Detail</h3>
+    <button class="split-close" id="split-close">&times;</button>
+  </div>
+  <div class="split-tabs">
+    <button class="split-tab active" data-split-tab="overview">Overview</button>
+    <button class="split-tab" data-split-tab="users">Users</button>
+    <button class="split-tab" data-split-tab="cost-detail">Cost</button>
+    <button class="split-tab" data-split-tab="compliance-detail">Compliance</button>
+  </div>
+  <div class="split-body" id="split-body"></div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-title">Apply Policy</h3>
+      <button class="modal-close" id="modal-close">&times;</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-footer" id="modal-footer"></div>
+  </div>
+</div>
+
+<script>
+/* ===== MOCK DATA ===== */
+const AI_TOOLS = [
+  { id:1, name:"ChatGPT Enterprise", vendor:"OpenAI", team:"Engineering", users:45, cost:2250, status:"approved", risk:"low", discovered:"api", trend:[30,35,38,42,45] },
+  { id:2, name:"GitHub Copilot", vendor:"Microsoft", team:"Engineering", users:62, cost:1240, status:"approved", risk:"low", discovered:"api", trend:[50,55,58,60,62] },
+  { id:3, name:"Amazon Bedrock (Claude)", vendor:"AWS", team:"Engineering", users:28, cost:4800, status:"approved", risk:"low", discovered:"api", trend:[15,18,22,25,28] },
+  { id:4, name:"Microsoft Copilot M365", vendor:"Microsoft", team:"Sales", users:120, cost:3600, status:"approved", risk:"low", discovered:"api", trend:[80,90,100,110,120] },
+  { id:5, name:"Jasper AI", vendor:"Jasper", team:"Marketing", users:12, cost:2400, status:"unapproved", risk:"medium", discovered:"desktop", trend:[5,7,8,10,12] },
+  { id:6, name:"Claude Pro (Personal)", vendor:"Anthropic", team:"Engineering", users:18, cost:360, status:"unapproved", risk:"high", discovered:"desktop", trend:[8,10,12,15,18] },
+  { id:7, name:"Midjourney", vendor:"Midjourney", team:"Marketing", users:8, cost:240, status:"unapproved", risk:"medium", discovered:"desktop", trend:[3,4,5,6,8] },
+  { id:8, name:"ChatGPT Plus (Personal)", vendor:"OpenAI", team:"Finance", users:15, cost:300, status:"unapproved", risk:"high", discovered:"desktop", trend:[6,8,10,12,15] },
+  { id:9, name:"Amazon Bedrock (Titan)", vendor:"AWS", team:"Engineering", users:22, cost:3200, status:"approved", risk:"low", discovered:"api", trend:[10,14,16,19,22] },
+  { id:10, name:"Copilot for Sales", vendor:"Microsoft", team:"Sales", users:35, cost:1050, status:"approved", risk:"low", discovered:"api", trend:[20,25,28,32,35] },
+  { id:11, name:"Grammarly AI", vendor:"Grammarly", team:"Marketing", users:25, cost:750, status:"monitored", risk:"low", discovered:"desktop", trend:[15,18,20,22,25] },
+  { id:12, name:"Notion AI", vendor:"Notion", team:"HR", users:14, cost:280, status:"unapproved", risk:"medium", discovered:"desktop", trend:[5,7,9,11,14] },
+  { id:13, name:"Perplexity Pro", vendor:"Perplexity", team:"Legal", users:6, cost:120, status:"unapproved", risk:"medium", discovered:"desktop", trend:[2,3,4,5,6] },
+  { id:14, name:"Amazon Q Developer", vendor:"AWS", team:"Engineering", users:40, cost:0, status:"approved", risk:"low", discovered:"api", trend:[20,25,30,35,40] },
+  { id:15, name:"Copilot in Teams", vendor:"Microsoft", team:"HR", users:50, cost:1500, status:"approved", risk:"low", discovered:"api", trend:[30,35,40,45,50] },
+  { id:16, name:"Runway ML", vendor:"Runway", team:"Marketing", users:4, cost:480, status:"unapproved", risk:"medium", discovered:"desktop", trend:[1,2,2,3,4] },
+  { id:17, name:"Gemini for Workspace", vendor:"Google", team:"Finance", users:30, cost:900, status:"monitored", risk:"low", discovered:"api", trend:[10,15,20,25,30] },
+  { id:18, name:"Copy.ai", vendor:"Copy.ai", team:"Marketing", users:7, cost:350, status:"unapproved", risk:"medium", discovered:"desktop", trend:[2,3,4,5,7] }
+];
+
+const POLICIES = [
+  { id:1, name:"Approved AI Tool List", scope:"All Teams", enforcement:"Block", compliance:92, updated:"May 15, 2026", desc:"Maintain and enforce a list of approved AI tools. Block access to unapproved tools." },
+  { id:2, name:"No PII in AI Prompts", scope:"All Teams", enforcement:"Block", compliance:78, updated:"May 10, 2026", desc:"Prevent personally identifiable information from being sent to AI tools." },
+  { id:3, name:"Source Code Protection", scope:"Engineering", enforcement:"Block", compliance:85, updated:"May 8, 2026", desc:"Block proprietary source code from being shared with external AI tools." },
+  { id:4, name:"AI Tool Request Process", scope:"All Teams", enforcement:"Gate", compliance:64, updated:"Apr 28, 2026", desc:"Require manager + security review for new AI tool requests." },
+  { id:5, name:"Data Classification for AI", scope:"All Teams", enforcement:"Nudge", compliance:55, updated:"Apr 20, 2026", desc:"Classify data sensitivity before sending to AI tools." },
+  { id:6, name:"AI Output Review", scope:"Legal, Finance", enforcement:"Nudge", compliance:58, updated:"Apr 15, 2026", desc:"Require human review of AI-generated content before external use." }
+];
+
+const RISK_ALERTS = [
+  { alert:"PII detected in AI prompts", tool:"ChatGPT Plus (Personal)", severity:"critical", sensitivity:"PII / SSN", detected:"2 hours ago", status:"Open" },
+  { alert:"Source code exfiltration risk", tool:"Claude Pro (Personal)", severity:"critical", sensitivity:"Source Code", detected:"5 hours ago", status:"Open" },
+  { alert:"Unencrypted data transfer", tool:"Jasper AI", severity:"high", sensitivity:"Marketing Plans", detected:"1 day ago", status:"Investigating" },
+  { alert:"Unauthorized API usage spike", tool:"Notion AI", severity:"medium", sensitivity:"Employee PII", detected:"1 day ago", status:"Investigating" },
+  { alert:"Privilege escalation attempt", tool:"Perplexity Pro", severity:"medium", sensitivity:"Legal Privileged", detected:"2 days ago", status:"Monitoring" },
+  { alert:"Data residency violation", tool:"Copy.ai", severity:"medium", sensitivity:"Customer Data", detected:"3 days ago", status:"Monitoring" },
+  { alert:"Non-compliant data retention", tool:"Runway ML", severity:"low", sensitivity:"Creative Assets", detected:"4 days ago", status:"Resolved" },
+  { alert:"Excessive permission scope", tool:"Midjourney", severity:"low", sensitivity:"Brand Assets", detected:"5 days ago", status:"Resolved" }
+];
+
+const AUDIT_LOG = [
+  { ts:"May 20, 2026 10:24 AM", action:"Shadow AI detected: Claude Pro (Personal) on 3 new devices", type:"detection", user:"System", target:"Claude Pro (Personal)" },
+  { ts:"May 20, 2026 10:12 AM", action:"Approved Grammarly AI for Marketing team", type:"approval", user:"Sarah Mitchell", target:"Grammarly AI" },
+  { ts:"May 20, 2026 08:30 AM", action:"Policy violation: PII detected in ChatGPT prompt", type:"enforcement", user:"System", target:"ChatGPT Plus (Personal)" },
+  { ts:"May 19, 2026 03:42 PM", action:"Escalated Midjourney for security review", type:"approval", user:"Anna Lopez", target:"Midjourney" },
+  { ts:"May 19, 2026 11:15 AM", action:"Connected AWS Bedrock integration", type:"policy", user:"Raj Kumar", target:"AWS Bedrock" },
+  { ts:"May 18, 2026 04:20 PM", action:"Created policy: No PII in AI Prompts", type:"policy", user:"James Chen", target:"Policy: No PII" },
+  { ts:"May 18, 2026 02:10 PM", action:"Blocked Runway ML for unapproved usage", type:"enforcement", user:"System", target:"Runway ML" },
+  { ts:"May 17, 2026 09:45 AM", action:"Updated Approved AI Tool List policy", type:"policy", user:"Sarah Mitchell", target:"Approved Tool List" },
+  { ts:"May 17, 2026 08:00 AM", action:"Shadow AI detected: Notion AI in HR department", type:"detection", user:"System", target:"Notion AI" },
+  { ts:"May 16, 2026 03:30 PM", action:"Approved Amazon Q Developer for Engineering", type:"approval", user:"Raj Kumar", target:"Amazon Q Developer" },
+  { ts:"May 16, 2026 01:15 PM", action:"Cost alert: Marketing AI spend exceeded $4K threshold", type:"enforcement", user:"System", target:"Marketing Team" },
+  { ts:"May 15, 2026 11:00 AM", action:"Quarterly compliance report generated", type:"policy", user:"Sarah Mitchell", target:"NIST AI RMF Report" }
+];
+
+const MATURITY_LEVELS = [
+  { level:1, title:"Ad Hoc", desc:"No formal AI governance. Tools adopted without oversight." },
+  { level:2, title:"Developing", desc:"Basic inventory. Some policies drafted but inconsistent enforcement." },
+  { level:3, title:"Standardized", desc:"Formal policies. Active monitoring. Shadow AI detection deployed.", current:true },
+  { level:4, title:"Managed", desc:"Automated enforcement. Full cost attribution. Risk scoring active." },
+  { level:5, title:"Optimized", desc:"Predictive governance. AI-driven policy optimization. Full ROI tracking." }
+];
+
+const CONNECTORS_CONNECTED = [
+  { name:"AWS Bedrock", desc:"AI/ML model access, usage tracking, and cost attribution via CloudWatch.", color:"#ff9900", letter:"A" },
+  { name:"Microsoft 365 Copilot", desc:"Copilot usage across Teams, Outlook, Word, Excel. License management.", color:"#0078d4", letter:"M" },
+  { name:"OpenAI Platform", desc:"ChatGPT Enterprise usage, API consumption tracking, and token metering.", color:"#10a37f", letter:"O" }
+];
+
+const CONNECTORS_COMING = [
+  { name:"Google Workspace", desc:"Gemini integration tracking", color:"#4285f4", letter:"G" },
+  { name:"Anthropic Console", desc:"Claude API usage monitoring", color:"#d97757", letter:"A" },
+  { name:"Salesforce Einstein", desc:"AI features in CRM workflows", color:"#00a1e0", letter:"S" },
+  { name:"ServiceNow AI", desc:"IT automation AI tracking", color:"#81b5a1", letter:"N" },
+  { name:"Slack AI", desc:"AI summarization and search", color:"#4a154b", letter:"S" },
+  { name:"Zoom AI Companion", desc:"Meeting AI features tracking", color:"#2d8cff", letter:"Z" },
+  { name:"Atlassian Intelligence", desc:"Jira and Confluence AI", color:"#0052cc", letter:"A" },
+  { name:"GitHub Copilot", desc:"Code assistant usage metrics", color:"#24292e", letter:"G" }
+];
+
+const POLICY_TEMPLATES = [
+  { icon:"&#128737;", title:"Acceptable Use Policy", desc:"Define permitted and prohibited AI use cases across the organization. Covers data handling, output validation, and acceptable tool categories.", category:"Foundation" },
+  { icon:"&#128272;", title:"Data Protection for AI", desc:"Protect sensitive data from exposure through AI tools. Includes classification rules, DLP integration, and data residency requirements.", category:"Security" },
+  { icon:"&#9878;", title:"AI Procurement Policy", desc:"Standardize how new AI tools are evaluated, approved, and onboarded. Includes vendor assessment criteria and security review checklist.", category:"Governance" },
+  { icon:"&#128200;", title:"AI Cost Management", desc:"Set budgets, approval thresholds, and chargeback rules for AI tool spending across departments.", category:"Finance" },
+  { icon:"&#128101;", title:"Employee AI Training", desc:"Require AI literacy training before granting access to AI tools. Track completion and certification status.", category:"HR" },
+  { icon:"&#128203;", title:"AI Incident Response", desc:"Define escalation procedures, containment actions, and reporting requirements for AI-related security incidents.", category:"Security" },
+  { icon:"&#9881;", title:"Third-Party AI Vendor Mgmt", desc:"Manage vendor risk, SLAs, and data processing agreements for all external AI service providers.", category:"Governance" },
+  { icon:"&#128220;", title:"AI Output Disclosure", desc:"Require disclosure when AI-generated content is used in customer-facing materials, legal documents, or financial reports.", category:"Compliance" },
+  { icon:"&#127760;", title:"Cross-Border AI Data", desc:"Ensure AI tool usage complies with data sovereignty and cross-border transfer regulations (GDPR, CCPA).", category:"Compliance" }
+];
+
+const ADMIN_INTEGRATIONS = [
+  { name:"AWS Bedrock", status:"Connected", statusColor:"var(--success)", lastSync:"2 min ago", color:"#ff9900", letter:"A" },
+  { name:"Microsoft 365", status:"Connected", statusColor:"var(--success)", lastSync:"5 min ago", color:"#0078d4", letter:"M" },
+  { name:"OpenAI Platform", status:"Connected", statusColor:"var(--success)", lastSync:"12 min ago", color:"#10a37f", letter:"O" }
+];
+
+/* ===== APP STATE ===== */
+let currentPage = 'command-center';
+let inventoryTab = 'all';
+let inventorySearch = '';
+let inventorySort = { key: 'name', asc: true };
+let inventoryPage = 1;
+const ITEMS_PER_PAGE = 10;
+let selectedTool = null;
+let splitTab = 'overview';
+
+/* ===== NAVIGATION ===== */
+function navigateTo(page) {
+  currentPage = page;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  var el = document.getElementById('page-' + page);
+  if (el) el.classList.add('active');
+  document.querySelectorAll('.sidebar-item').forEach(item => {
+    item.classList.toggle('active', item.dataset.page === page);
+  });
+  var names = {
+    'command-center':'Command Center','inventory':'AI Inventory','governance':'Governance',
+    'security':'Security & Risk','cost':'Cost Attribution','adoption':'Adoption & Maturity',
+    'admin':'Admin Console','audit':'Activity Audit Log','marketplace':'Integration Marketplace',
+    'compliance':'Compliance Reports','enforcement':'Enforcement Rules','roi':'AI ROI Insights',
+    'templates':'Policy Templates'
+  };
+  document.getElementById('breadcrumb-current').textContent = names[page] || page;
+  closeSplitPanel();
+}
+
+document.querySelectorAll('.sidebar-item').forEach(function(item) {
+  item.addEventListener('click', function() {
+    navigateTo(this.dataset.page);
+  });
+});
+
+/* ===== DARK MODE ===== */
+document.getElementById('dark-mode-toggle').addEventListener('click', function() {
+  var html = document.documentElement;
+  var curr = html.getAttribute('data-theme');
+  html.setAttribute('data-theme', curr === 'light' ? 'dark' : 'light');
+  this.textContent = curr === 'light' ? '☀' : '☽';
+});
+
+/* ===== KEYBOARD SHORTCUTS ===== */
+document.addEventListener('keydown', function(e) {
+  if (e.key === '/') {
+    var active = document.activeElement;
+    if (active.tagName !== 'INPUT' && active.tagName !== 'TEXTAREA') {
+      e.preventDefault();
+      document.getElementById('global-search').focus();
+    }
+  }
+  if (e.key === 'Escape') {
+    closeSplitPanel();
+    closeModal();
+  }
+});
+
+/* ===== INVENTORY TABLE ===== */
+function getFilteredTools() {
+  var tools = AI_TOOLS.slice();
+  if (inventoryTab === 'shadow') tools = tools.filter(function(t) { return t.status === 'unapproved'; });
+  else if (inventoryTab === 'approved') tools = tools.filter(function(t) { return t.status === 'approved'; });
+  else if (inventoryTab === 'blocked') tools = tools.filter(function(t) { return t.status === 'monitored' || t.status === 'blocked'; });
+
+  if (inventorySearch) {
+    var q = inventorySearch.toLowerCase();
+    tools = tools.filter(function(t) {
+      return t.name.toLowerCase().includes(q) || t.vendor.toLowerCase().includes(q) || t.team.toLowerCase().includes(q);
+    });
+  }
+
+  tools.sort(function(a, b) {
+    var va = a[inventorySort.key], vb = b[inventorySort.key];
+    if (typeof va === 'string') { va = va.toLowerCase(); vb = vb.toLowerCase(); }
+    if (va < vb) return inventorySort.asc ? -1 : 1;
+    if (va > vb) return inventorySort.asc ? 1 : -1;
+    return 0;
+  });
+
+  return tools;
+}
+
+function renderInventory() {
+  var tools = getFilteredTools();
+  var total = tools.length;
+  var totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
+  if (inventoryPage > totalPages) inventoryPage = totalPages;
+  var start = (inventoryPage - 1) * ITEMS_PER_PAGE;
+  var pageTools = tools.slice(start, start + ITEMS_PER_PAGE);
+
+  var tbody = document.getElementById('inventory-tbody');
+  tbody.innerHTML = pageTools.map(function(t) {
+    return '<tr data-id="' + t.id + '">' +
+      '<td><strong>' + t.name + '</strong></td>' +
+      '<td>' + t.vendor + '</td>' +
+      '<td>' + t.team + '</td>' +
+      '<td>' + t.users + '</td>' +
+      '<td>' + (t.cost === 0 ? 'Free' : '$' + t.cost.toLocaleString()) + '</td>' +
+      '<td><span class="badge badge-' + t.status + '">' + capitalize(t.status) + '</span></td>' +
+      '<td><span class="badge badge-' + t.risk + '">' + capitalize(t.risk) + '</span></td>' +
+      '<td><button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();openPolicyModal(' + t.id + ')">Apply Policy</button></td>' +
+      '</tr>';
+  }).join('');
+
+  tbody.querySelectorAll('tr').forEach(function(tr) {
+    tr.addEventListener('click', function() {
+      var id = parseInt(this.dataset.id);
+      openSplitPanel(id);
+    });
+  });
+
+  // Update tab counts
+  document.getElementById('tab-count-all').textContent = AI_TOOLS.length;
+  document.getElementById('tab-count-shadow').textContent = AI_TOOLS.filter(function(t){return t.status==='unapproved';}).length;
+  document.getElementById('tab-count-approved').textContent = AI_TOOLS.filter(function(t){return t.status==='approved';}).length;
+  document.getElementById('tab-count-blocked').textContent = AI_TOOLS.filter(function(t){return t.status==='monitored'||t.status==='blocked';}).length;
+
+  // Pagination
+  var pag = document.getElementById('inventory-pagination');
+  var info = 'Showing ' + (total === 0 ? 0 : start+1) + '-' + Math.min(start + ITEMS_PER_PAGE, total) + ' of ' + total + ' tools';
+  var btns = '';
+  btns += '<button class="page-btn" onclick="inventoryPage=1;renderInventory();" ' + (inventoryPage <= 1 ? 'disabled' : '') + '>&laquo;</button>';
+  btns += '<button class="page-btn" onclick="inventoryPage--;renderInventory();" ' + (inventoryPage <= 1 ? 'disabled' : '') + '>&lsaquo;</button>';
+  for (var i = 1; i <= totalPages; i++) {
+    btns += '<button class="page-btn' + (i === inventoryPage ? ' active' : '') + '" onclick="inventoryPage=' + i + ';renderInventory();">' + i + '</button>';
+  }
+  btns += '<button class="page-btn" onclick="inventoryPage++;renderInventory();" ' + (inventoryPage >= totalPages ? 'disabled' : '') + '>&rsaquo;</button>';
+  btns += '<button class="page-btn" onclick="inventoryPage=' + totalPages + ';renderInventory();" ' + (inventoryPage >= totalPages ? 'disabled' : '') + '>&raquo;</button>';
+  pag.innerHTML = '<span>' + info + '</span><div class="pagination-btns">' + btns + '</div>';
+
+  // Sort indicators
+  document.querySelectorAll('#inventory-table thead th').forEach(function(th) {
+    th.classList.toggle('sorted', th.dataset.sort === inventorySort.key);
+    var arrow = th.querySelector('.sort-arrow');
+    if (arrow) arrow.innerHTML = th.dataset.sort === inventorySort.key ? (inventorySort.asc ? '&#9650;' : '&#9660;') : '&#9650;';
+  });
+}
+
+// Tab clicks
+document.querySelectorAll('#inventory-tabs .tab-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    inventoryTab = this.dataset.tab;
+    inventoryPage = 1;
+    document.querySelectorAll('#inventory-tabs .tab-btn').forEach(function(b){b.classList.remove('active');});
+    this.classList.add('active');
+    renderInventory();
+  });
+});
+
+// Search
+document.getElementById('inventory-search').addEventListener('input', function() {
+  inventorySearch = this.value;
+  inventoryPage = 1;
+  renderInventory();
+});
+
+// Sort
+document.querySelectorAll('#inventory-table thead th[data-sort]').forEach(function(th) {
+  th.addEventListener('click', function() {
+    var key = this.dataset.sort;
+    if (inventorySort.key === key) inventorySort.asc = !inventorySort.asc;
+    else { inventorySort.key = key; inventorySort.asc = true; }
+    renderInventory();
+  });
+});
+
+/* ===== SPLIT PANEL ===== */
+function openSplitPanel(id) {
+  selectedTool = AI_TOOLS.find(function(t) { return t.id === id; });
+  if (!selectedTool) return;
+  splitTab = 'overview';
+  document.querySelectorAll('.split-tab').forEach(function(t,i){t.classList.toggle('active',i===0);});
+  document.getElementById('split-title').textContent = selectedTool.name;
+  document.getElementById('split-panel').classList.add('open');
+  document.getElementById('split-overlay').classList.add('open');
+  renderSplitBody();
+}
+
+function closeSplitPanel() {
+  document.getElementById('split-panel').classList.remove('open');
+  document.getElementById('split-overlay').classList.remove('open');
+  selectedTool = null;
+}
+
+document.getElementById('split-close').addEventListener('click', closeSplitPanel);
+document.getElementById('split-overlay').addEventListener('click', closeSplitPanel);
+
+document.querySelectorAll('.split-tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    splitTab = this.dataset.splitTab;
+    document.querySelectorAll('.split-tab').forEach(function(t){t.classList.remove('active');});
+    this.classList.add('active');
+    renderSplitBody();
+  });
+});
+
+function renderSplitBody() {
+  var t = selectedTool;
+  if (!t) return;
+  var body = document.getElementById('split-body');
+  var html = '';
+
+  if (splitTab === 'overview') {
+    html += '<div style="display:flex;flex-direction:column;gap:8px;">';
+    html += detailRow('Vendor', t.vendor);
+    html += detailRow('Team', t.team);
+    html += detailRow('Status', '<span class="badge badge-' + t.status + '">' + capitalize(t.status) + '</span>');
+    html += detailRow('Risk Level', '<span class="badge badge-' + t.risk + '">' + capitalize(t.risk) + '</span>');
+    html += detailRow('Discovery Method', t.discovered === 'api' ? 'API Integration' : 'Quick Desktop Agent');
+    html += detailRow('Active Users', t.users);
+    html += detailRow('Monthly Cost', t.cost === 0 ? 'Free' : '$' + t.cost.toLocaleString());
+    html += '</div>';
+    html += '<div style="margin-top:20px;"><h4 style="font-size:13px;font-weight:600;margin-bottom:8px;">Usage Trend (Last 5 Months)</h4>';
+    html += '<div class="kpi-sparkline"><svg viewBox="0 0 100 30">';
+    var maxVal = Math.max.apply(null, t.trend);
+    var points = t.trend.map(function(v,i){ return (i*25) + ',' + (28 - (v/maxVal)*26); }).join(' ');
+    html += '<polyline points="' + points + '" fill="none" stroke="var(--sparkline)" stroke-width="2"/>';
+    html += '</svg></div></div>';
+    html += '<div style="margin-top:20px;"><button class="btn btn-primary" onclick="openPolicyModal(' + t.id + ')">Apply Policy</button></div>';
+  }
+  else if (splitTab === 'users') {
+    var fakeUsers = ['Alex Rivera','Jordan Lee','Sam Patel','Chris Wu','Morgan Taylor','Casey Kim','Riley Chen','Avery Singh'];
+    html += '<h4 style="font-size:13px;font-weight:600;margin-bottom:12px;">' + t.users + ' Active Users</h4>';
+    html += '<div style="display:flex;flex-direction:column;gap:8px;">';
+    for (var i = 0; i < Math.min(t.users, 8); i++) {
+      var name = fakeUsers[i % fakeUsers.length];
+      var init = name.split(' ').map(function(n){return n[0];}).join('');
+      html += '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border-light);">';
+      html += '<div class="activity-avatar" style="background:hsl(' + (i*45) + ',50%,45%);width:28px;height:28px;font-size:10px;">' + init + '</div>';
+      html += '<div style="flex:1;"><div style="font-weight:500;font-size:13px;">' + name + '</div><div style="font-size:11px;color:var(--text-muted);">' + t.team + '</div></div>';
+      html += '<div style="font-size:11px;color:var(--text-muted);">Last active ' + (i+1) + 'h ago</div>';
+      html += '</div>';
+    }
+    if (t.users > 8) html += '<div style="text-align:center;padding:12px;color:var(--text-muted);font-size:12px;">+ ' + (t.users - 8) + ' more users</div>';
+    html += '</div>';
+  }
+  else if (splitTab === 'cost-detail') {
+    html += '<div style="display:flex;flex-direction:column;gap:8px;">';
+    html += detailRow('Monthly Cost', t.cost === 0 ? 'Free' : '$' + t.cost.toLocaleString());
+    html += detailRow('Cost per User', t.cost === 0 ? 'Free' : '$' + (t.cost / t.users).toFixed(2));
+    html += detailRow('Annual Projection', t.cost === 0 ? 'Free' : '$' + (t.cost * 12).toLocaleString());
+    html += detailRow('Budget Status', t.cost > 2000 ? '<span style="color:var(--warning);">Over threshold</span>' : '<span style="color:var(--success);">Within budget</span>');
+    html += '</div>';
+    html += '<div style="margin-top:16px;"><h4 style="font-size:13px;font-weight:600;margin-bottom:8px;">Monthly Trend</h4>';
+    html += '<div class="bar-chart">';
+    var months = ['Jan','Feb','Mar','Apr','May'];
+    t.trend.forEach(function(v, i) {
+      var c = v / t.users * (t.cost / t.users || 1);
+      var pct = Math.min(100, (v / Math.max.apply(null, t.trend)) * 100);
+      html += '<div class="bar-row"><div class="bar-label">' + months[i] + '</div><div class="bar-track"><div class="bar-fill" style="width:' + pct + '%;background:var(--primary);">' + v + ' users</div></div></div>';
+    });
+    html += '</div></div>';
+  }
+  else if (splitTab === 'compliance-detail') {
+    html += '<div style="display:flex;flex-direction:column;gap:8px;">';
+    html += detailRow('Compliance Status', '<span class="badge badge-' + t.status + '">' + capitalize(t.status) + '</span>');
+    html += detailRow('Risk Level', '<span class="badge badge-' + t.risk + '">' + capitalize(t.risk) + '</span>');
+    html += detailRow('Data Classification', t.risk === 'high' ? 'Confidential' : t.risk === 'medium' ? 'Internal' : 'Public');
+    html += detailRow('DLP Policy', t.status === 'approved' ? 'Active' : 'Not Applied');
+    html += detailRow('Last Audit', 'May 12, 2026');
+    html += '</div>';
+    html += '<div style="margin-top:16px;"><h4 style="font-size:13px;font-weight:600;margin-bottom:8px;">Applicable Policies</h4>';
+    POLICIES.forEach(function(p) {
+      html += '<div style="padding:8px 12px;background:var(--bg);border-radius:var(--radius-sm);margin-bottom:6px;font-size:12px;display:flex;justify-content:space-between;">';
+      html += '<span>' + p.name + '</span><span class="badge badge-' + (p.compliance > 80 ? 'approved' : p.compliance > 60 ? 'monitored' : 'unapproved') + '">' + p.compliance + '%</span>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+
+  body.innerHTML = html;
+}
+
+function detailRow(label, value) {
+  return '<div class="detail-row"><span class="detail-label">' + label + '</span><span class="detail-value">' + value + '</span></div>';
+}
+
+/* ===== MODAL ===== */
+function openPolicyModal(toolId) {
+  var tool = toolId ? AI_TOOLS.find(function(t){return t.id===toolId;}) : null;
+  var title = tool ? 'Apply Policy to ' + tool.name : 'Add New AI Tool';
+  document.getElementById('modal-title').textContent = title;
+
+  if (tool) {
+    document.getElementById('modal-body').innerHTML =
+      '<p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">Choose a governance action for this tool:</p>' +
+      '<div class="radio-group">' +
+        '<label class="radio-option"><input type="radio" name="policy-action" value="approve" ' + (tool.status==='approved'?'checked':'') + '><div><div class="radio-label">Approve</div><div class="radio-desc">Add to approved list. Enable full access with monitoring.</div></div></label>' +
+        '<label class="radio-option"><input type="radio" name="policy-action" value="monitor" ' + (tool.status==='monitored'?'checked':'') + '><div><div class="radio-label">Monitor</div><div class="radio-desc">Allow usage but track activity and flag policy violations.</div></div></label>' +
+        '<label class="radio-option"><input type="radio" name="policy-action" value="block"><div><div class="radio-label">Block</div><div class="radio-desc">Prevent access. Users will see a governance notice.</div></div></label>' +
+      '</div>';
+    document.getElementById('modal-footer').innerHTML =
+      '<button class="btn btn-secondary" onclick="closeModal()">Cancel</button>' +
+      '<button class="btn btn-primary" onclick="applyPolicy()">Apply</button>';
+  } else {
+    document.getElementById('modal-body').innerHTML =
+      '<p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">Tool registration coming soon. Use integrations to auto-discover tools.</p>';
+    document.getElementById('modal-footer').innerHTML =
+      '<button class="btn btn-secondary" onclick="closeModal()">Close</button>';
+  }
+
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+
+function applyPolicy() {
+  closeModal();
+  closeSplitPanel();
+}
+
+document.getElementById('modal-close').addEventListener('click', closeModal);
+document.getElementById('modal-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+function openCreatePolicyModal() {
+  document.getElementById('modal-title').textContent = 'Create New Policy';
+  document.getElementById('modal-body').innerHTML =
+    '<div style="display:flex;flex-direction:column;gap:14px;">' +
+      '<div><label style="font-size:12px;font-weight:500;display:block;margin-bottom:4px;">Policy Name</label><input type="text" class="filter-input" placeholder="e.g., No Financial Data in AI Tools" style="width:100%;"></div>' +
+      '<div><label style="font-size:12px;font-weight:500;display:block;margin-bottom:4px;">Scope</label><select class="filter-input" style="width:100%;"><option>All Teams</option><option>Engineering</option><option>Sales</option><option>Marketing</option><option>HR</option><option>Finance</option><option>Legal</option></select></div>' +
+      '<div><label style="font-size:12px;font-weight:500;display:block;margin-bottom:4px;">Enforcement</label>' +
+        '<div class="radio-group">' +
+          '<label class="radio-option"><input type="radio" name="enforcement" value="nudge" checked><div><div class="radio-label">Nudge</div><div class="radio-desc">Warn users but allow override</div></div></label>' +
+          '<label class="radio-option"><input type="radio" name="enforcement" value="block"><div><div class="radio-label">Block</div><div class="radio-desc">Prevent the action entirely</div></div></label>' +
+          '<label class="radio-option"><input type="radio" name="enforcement" value="gate"><div><div class="radio-label">Gate</div><div class="radio-desc">Require approval before proceeding</div></div></label>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  document.getElementById('modal-footer').innerHTML =
+    '<button class="btn btn-secondary" onclick="closeModal()">Cancel</button>' +
+    '<button class="btn btn-primary" onclick="closeModal()">Create Policy</button>';
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+/* ===== RENDER GOVERNANCE ===== */
+function renderGovernance() {
+  var tbody = document.getElementById('governance-tbody');
+  tbody.innerHTML = POLICIES.map(function(p) {
+    var compColor = p.compliance > 80 ? 'var(--success)' : p.compliance > 60 ? 'var(--warning)' : 'var(--danger)';
+    return '<tr>' +
+      '<td><strong>' + p.name + '</strong><br><span style="font-size:11px;color:var(--text-muted);">' + p.desc.substring(0,60) + '...</span></td>' +
+      '<td>' + p.scope + '</td>' +
+      '<td><span class="badge badge-' + (p.enforcement==='Block'?'unapproved':p.enforcement==='Gate'?'monitored':'low') + '">' + p.enforcement + '</span></td>' +
+      '<td><div style="display:flex;align-items:center;gap:8px;"><div class="progress-bar" style="width:80px;"><div class="progress-fill" style="width:' + p.compliance + '%;background:' + compColor + ';"></div></div><span style="font-weight:600;font-size:12px;">' + p.compliance + '%</span></div></td>' +
+      '<td style="font-size:12px;color:var(--text-muted);">' + p.updated + '</td>' +
+      '<td><button class="btn btn-secondary btn-sm">Edit</button></td>' +
+      '</tr>';
+  }).join('');
+}
+
+/* ===== RENDER SECURITY ===== */
+function renderSecurity() {
+  var tbody = document.getElementById('security-tbody');
+  tbody.innerHTML = RISK_ALERTS.map(function(r) {
+    var sevClass = r.severity === 'critical' ? 'high' : r.severity;
+    return '<tr>' +
+      '<td>' + r.alert + '</td>' +
+      '<td>' + r.tool + '</td>' +
+      '<td><span class="badge badge-' + sevClass + '">' + capitalize(r.severity) + '</span></td>' +
+      '<td><span class="badge badge-medium">' + r.sensitivity + '</span></td>' +
+      '<td style="font-size:12px;color:var(--text-muted);">' + r.detected + '</td>' +
+      '<td><span class="badge badge-' + (r.status==='Open'?'unapproved':r.status==='Investigating'?'monitored':'approved') + '">' + r.status + '</span></td>' +
+      '</tr>';
+  }).join('');
+}
+
+/* ===== RENDER COST ===== */
+function renderCost() {
+  var sorted = AI_TOOLS.slice().sort(function(a,b){return b.cost - a.cost;});
+  var tbody = document.getElementById('cost-tbody');
+  tbody.innerHTML = sorted.map(function(t) {
+    var cpu = t.users > 0 && t.cost > 0 ? '$' + (t.cost/t.users).toFixed(2) : t.cost === 0 ? 'Free' : '-';
+    var maxVal = Math.max.apply(null, t.trend);
+    var points = t.trend.map(function(v,i){return (i*20) + ',' + (18 - (v/maxVal)*16);}).join(' ');
+    return '<tr>' +
+      '<td><strong>' + t.name + '</strong></td>' +
+      '<td>' + t.vendor + '</td>' +
+      '<td>' + t.team + '</td>' +
+      '<td>' + t.users + '</td>' +
+      '<td>' + (t.cost === 0 ? 'Free' : '$' + t.cost.toLocaleString()) + '</td>' +
+      '<td>' + cpu + '</td>' +
+      '<td><svg viewBox="0 0 80 20" style="width:80px;height:20px;"><polyline points="' + points + '" fill="none" stroke="var(--sparkline)" stroke-width="1.5"/></svg></td>' +
+      '</tr>';
+  }).join('');
+}
+
+/* ===== RENDER AUDIT ===== */
+function renderAudit() {
+  var search = document.getElementById('audit-search').value.toLowerCase();
+  var typeFilter = document.getElementById('audit-type-filter').value;
+  var filtered = AUDIT_LOG.filter(function(a) {
+    if (typeFilter !== 'all' && a.type !== typeFilter) return false;
+    if (search && !a.action.toLowerCase().includes(search) && !a.user.toLowerCase().includes(search) && !a.target.toLowerCase().includes(search)) return false;
+    return true;
+  });
+  var tbody = document.getElementById('audit-tbody');
+  tbody.innerHTML = filtered.map(function(a) {
+    var typeColors = { detection:'unapproved', approval:'approved', policy:'low', enforcement:'monitored' };
+    return '<tr>' +
+      '<td style="font-size:12px;white-space:nowrap;">' + a.ts + '</td>' +
+      '<td>' + a.action + '</td>' +
+      '<td><span class="badge badge-' + (typeColors[a.type]||'low') + '">' + capitalize(a.type) + '</span></td>' +
+      '<td>' + a.user + '</td>' +
+      '<td>' + a.target + '</td>' +
+      '<td><button class="btn btn-secondary btn-sm">View</button></td>' +
+      '</tr>';
+  }).join('');
+}
+
+document.getElementById('audit-search').addEventListener('input', renderAudit);
+document.getElementById('audit-type-filter').addEventListener('change', renderAudit);
+
+/* ===== RENDER MATURITY ===== */
+function renderMaturity() {
+  var container = document.getElementById('maturity-cards');
+  container.innerHTML = MATURITY_LEVELS.map(function(m) {
+    return '<div class="maturity-card' + (m.current ? ' current' : '') + '">' +
+      '<div class="maturity-level">' + m.level + '</div>' +
+      '<div class="maturity-title">' + m.title + '</div>' +
+      '<div class="maturity-desc">' + m.desc + '</div>' +
+      (m.current ? '<div style="margin-top:12px;"><span class="badge badge-approved">Current Level</span></div>' : '') +
+      '</div>';
+  }).join('');
+}
+
+/* ===== RENDER MARKETPLACE ===== */
+function renderMarketplace() {
+  document.getElementById('marketplace-connected').innerHTML = CONNECTORS_CONNECTED.map(function(c) {
+    return '<div class="connector-card">' +
+      '<div class="connector-logo" style="background:' + c.color + ';">' + c.letter + '</div>' +
+      '<div class="connector-name">' + c.name + '</div>' +
+      '<div class="connector-desc">' + c.desc + '</div>' +
+      '<div class="connector-status" style="color:var(--success);">&#10003; Connected</div>' +
+      '</div>';
+  }).join('');
+
+  document.getElementById('marketplace-coming').innerHTML = CONNECTORS_COMING.map(function(c) {
+    return '<div class="connector-card">' +
+      '<div class="connector-logo" style="background:' + c.color + ';">' + c.letter + '</div>' +
+      '<div class="connector-name">' + c.name + '</div>' +
+      '<div class="connector-desc">' + c.desc + '</div>' +
+      '<button class="btn btn-secondary btn-sm" style="margin-top:auto;">Notify Me</button>' +
+      '</div>';
+  }).join('');
+}
+
+/* ===== RENDER ADMIN ===== */
+function renderAdmin() {
+  document.getElementById('admin-integrations').innerHTML = ADMIN_INTEGRATIONS.map(function(a) {
+    return '<div class="connector-card">' +
+      '<div class="connector-logo" style="background:' + a.color + ';">' + a.letter + '</div>' +
+      '<div class="connector-name">' + a.name + '</div>' +
+      '<div class="connector-status" style="color:' + a.statusColor + ';">&#10003; ' + a.status + '</div>' +
+      '<div style="font-size:11px;color:var(--text-muted);">Last sync: ' + a.lastSync + '</div>' +
+      '<button class="btn btn-secondary btn-sm" style="margin-top:8px;">Configure</button>' +
+      '</div>';
+  }).join('');
+}
+
+/* ===== RENDER POLICY TEMPLATES ===== */
+function renderTemplates() {
+  document.getElementById('policy-templates-grid').innerHTML = POLICY_TEMPLATES.map(function(t) {
+    return '<div class="template-card">' +
+      '<div class="template-icon">' + t.icon + '</div>' +
+      '<div class="template-title">' + t.title + '</div>' +
+      '<div style="margin-bottom:8px;"><span class="badge badge-low">' + t.category + '</span></div>' +
+      '<div class="template-desc">' + t.desc + '</div>' +
+      '<button class="btn btn-primary btn-sm">Apply Template</button>' +
+      '</div>';
+  }).join('');
+}
+
+/* ===== UTILITY ===== */
+function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+/* ===== INIT ===== */
+renderInventory();
+renderGovernance();
+renderSecurity();
+renderCost();
+renderAudit();
+renderMaturity();
+renderMarketplace();
+renderAdmin();
+renderTemplates();
+</script>
+</body>
+</html>

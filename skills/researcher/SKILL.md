@@ -6,7 +6,7 @@ description: >
   "what are competitors doing", or when the pm-pipeline orchestrator invokes Stage 1.
   Produces structured research with quantitative data, competitor evolution timelines,
   and market context.
-version: 0.3.0
+version: 0.4.0
 ---
 
 # Researcher Agent
@@ -138,6 +138,46 @@ Across all competitors, identify:
 - Gaps (nobody does W yet) — the opportunity space
 - Trends (moving from A to B) — with timeline
 
+### Step 8.5: Opportunity-Solution Tree
+
+The Pattern Synthesis (Step 8) produces gaps as a flat list. This step restructures those gaps into a divergent tree of opportunities and solution directions. The tree is a structured inventory for the PRD Writer to select from — it does NOT pick winners, rank directions, or recommend solutions.
+
+**How to build the tree:**
+1. Restate the Problem Statement from the Decision to Inform (Step 1).
+2. Extract 3-5 opportunities from the gaps identified in Step 8, competitor weaknesses from Steps 3-4, and unmet customer needs from Step 6.
+3. For each opportunity, generate 2-3 distinct solution directions. Each direction is a concrete strategic approach (e.g., "build recommendation engine inside CloudWatch" vs. "surface cost deltas in Bedrock model comparison"), not a feature spec or wireframe.
+4. For each direction, fill in the table columns: Description, Supports JTBD, Key Tradeoff, Dependency Risk.
+
+**Evidence traceability (mandatory):** Every opportunity must cite at least one specific finding from Steps 2-8. Reference the step number and the specific finding (e.g., "Gap #3 from Pattern Analysis" or "ServiceNow weakness from Step 3: ITSM-centric buyer limits cloud-native reach"). If an opportunity cites only a single step, flag it as weakly grounded — strong opportunities draw from 2+ steps.
+
+**Tradeoff specificity (mandatory):** Each direction's Key Tradeoff must name a concrete cost — not "complex to build" but "requires X-Ray team dependency for trace data access" or "adds 3-month timeline for Bedrock API integration."
+
+**No recommendation language:** The tree must contain zero language indicating a preferred direction. Do not use "recommended," "best," "preferred," "obvious choice," or comparative superlatives ranking one direction over another. If a direction requires research that was not done in Steps 2-8, flag it as "requires further research" rather than inventing claims.
+
+**Output format:**
+
+```markdown
+## Opportunity-Solution Tree
+
+### Problem Statement
+> [Restated from Decision to Inform]
+
+### Opportunity 1: [Name]
+**Evidence basis:** [Cite specific pattern analysis gaps, customer quotes, or competitor weaknesses that surface this opportunity — include step numbers]
+
+| Direction | Description | Supports JTBD | Key Tradeoff | Dependency Risk |
+|-----------|-------------|---------------|--------------|-----------------|
+| A: [name] | [2-3 sentences] | [which jobs] | [primary cost — specific, not generic] | [team/service] |
+| B: [name] | [2-3 sentences] | [which jobs] | [primary cost — specific, not generic] | [team/service] |
+
+[Repeat for 3-5 opportunities, each with 2-3 directions]
+
+### Tree Summary
+- Total opportunities identified: [N]
+- Total solution directions: [N]
+- Recommendation: NONE — selection is the PRD Writer's job
+```
+
 ### Step 9: What to Monitor (Continuous Intelligence)
 Research doesn't end with this artifact. List:
 - Competitor pricing pages to watch for changes
@@ -230,6 +270,26 @@ tier-1-2-percentage: [% of citations from Tier 1-2]
 ### Gaps (Opportunities)
 ### Trends
 
+## Opportunity-Solution Tree
+
+### Problem Statement
+> [Restated from Decision to Inform]
+
+### Opportunity 1: [Name]
+**Evidence basis:** [Cite step numbers and specific findings]
+
+| Direction | Description | Supports JTBD | Key Tradeoff | Dependency Risk |
+|-----------|-------------|---------------|--------------|-----------------|
+| A: [name] | [2-3 sentences] | [which jobs] | [specific cost] | [team/service] |
+| B: [name] | [2-3 sentences] | [which jobs] | [specific cost] | [team/service] |
+
+[Repeat for 3-5 opportunities, each with 2-3 directions]
+
+### Tree Summary
+- Total opportunities identified: [N]
+- Total solution directions: [N]
+- Recommendation: NONE — selection is the PRD Writer's job
+
 ## Key Takeaways for PRD (5-7, actionable)
 [Each takeaway connects directly to the decision stated at top]
 
@@ -252,8 +312,9 @@ tier-1-2-percentage: [% of citations from Tier 1-2]
 | Customer Voice | 400-600 words | 3+ direct quotes + interpretation |
 | Why Customers Switch | 200-400 words | Migration signals |
 | Pattern Analysis | 300-500 words | Synthesis, not repetition |
+| Opportunity-Solution Tree | 600-900 words | Divergent options for PRD Writer |
 | What to Monitor | 200-300 words | Continuous intelligence |
-| **Total Target** | **5,000-7,500 words** | Deep but focused |
+| **Total Target** | **5,600-8,400 words** | Deep but focused |
 
 ## Quality Checklist
 - [ ] Decision-to-inform stated at top
@@ -267,6 +328,8 @@ tier-1-2-percentage: [% of citations from Tier 1-2]
 - [ ] At least 3 direct customer voice quotes from forums/reviews
 - [ ] "Why Customers Switch" section with real migration stories (or documented absence)
 - [ ] Research methodology section documents queries, sources, and data gaps
+- [ ] Opportunity tree has 3-5 opportunities, each with 2+ directions, none marked as recommended
+- [ ] Every opportunity in the tree cites specific findings from Steps 2-8
 - [ ] "What to Monitor" section for continuous intelligence
 - [ ] Hallucination sweep completed — every claim verified against source
 - [ ] Total word count in 5,000-7,500 range
@@ -289,3 +352,6 @@ tier-1-2-percentage: [% of citations from Tier 1-2]
 11. No continuous intelligence — added "What to Monitor" section for ongoing tracking
 12. No hallucination sweep — added final QA step to verify every claim against source
 13. All sections treated as equal depth — added section depth hierarchy (own product > primary competitor > secondary > market data)
+
+### v0.3.0 → v0.4.0 (2026-05-19, opportunity-tree change spec)
+14. Pattern analysis gaps were a flat list — PRD Writer had no structured menu of alternatives. Added Step 8.5: Opportunity-Solution Tree to restructure gaps into divergent opportunities with 2-3 solution directions each, evidence traceability, and explicit no-recommendation constraint.

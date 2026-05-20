@@ -13,7 +13,7 @@ Run the full PM pipeline for `$ARGUMENTS`. Parse the arguments:
 
 ## Pipeline Architecture
 
-6 stages, executed sequentially. Each stage produces a versioned artifact in the working directory. Feedback loops run as post-stage side effects (non-blocking) — the pipeline always moves forward.
+7 stages, executed sequentially (Stage 7 is deferred). Each stage produces a versioned artifact in the working directory. Feedback loops run as post-stage side effects (non-blocking) — the pipeline always moves forward.
 
 ### Stage 0: Setup
 1. Create a working directory: `pipeline-[topic-slug]/`
@@ -62,6 +62,24 @@ Invoke the `prototype-builder` skill. Pass the approved design spec.
 Invoke the `launch-readiness` skill. Pass all approved artifacts (using the latest versions, including feedback-patched PRD and design spec).
 - Output: `launch-readiness-v1.md` — eng spec, acceptance criteria, phased rollout, success metrics, meeting deck outline
 
+### Stage 7: Post-Launch Evaluation (DEFERRED)
+Invoke the `post-launch-evaluator` skill. This stage does NOT run automatically after Stage 6.
+
+**Trigger conditions (any one):**
+- User says "evaluate launch", "post-launch review", "how did it do", "did it work", or "post-mortem metrics"
+- A scheduled task fires 30+ days after GA date recorded in `pipeline-state.md`
+
+**Context pruning:** Stage 7 receives only:
+- `launch-readiness-v[N].md` — Sections 5 (Phased Rollout), 11 (Success Metrics), and 13 (Risk Register) only
+- `prd-v[final].md` — JTBD list and North Star metric only
+- Post-launch metrics provided by the user or fetched from production telemetry
+- Incident/feedback log (if available)
+
+Do NOT pass full artifacts. Strip everything except the sections listed above before invoking the skill.
+
+- Output: `post-launch-eval-v1.md` — verdict, metric scorecard, rollout gate audit, risk calibration, JTBD validation, iteration backlog
+- **Feedback (7→1, next cycle):** When the Iteration Backlog contains ≥1 item, the orchestrator offers to start a new pipeline cycle. The backlog seeds the next cycle's Stage 1 (Researcher) with the highest-impact item as "Decision to Inform." See Loop 4 below.
+
 ## Feedback Loops
 
 Feedback loops are post-stage side effects. They do NOT block the primary pipeline sequence. Where possible, feedback patches run in parallel with the next stage.
@@ -96,6 +114,16 @@ Feedback loops are post-stage side effects. They do NOT block the primary pipeli
 | **Version increment** | `prd-v[final].md` — this is the last PRD version in the pipeline. Marked as `[final]` in pipeline-state.md |
 | **Parallelism** | Must complete before Stage 6 starts — Launch Readiness needs the final PRD |
 
+### Loop 4: Post-Launch → Research (Stage 7→1, next cycle)
+
+| Property | Value |
+|----------|-------|
+| **Trigger** | Post-Launch Evaluator produces Iteration Backlog with ≥1 item |
+| **What gets sent back** | Iteration Backlog + Risk Calibration results + JTBD validation verdicts |
+| **What it seeds** | Next cycle's Stage 1 (Researcher) receives the backlog as scoping input. The Researcher's "Decision to Inform" is pre-populated from the highest-impact backlog item. |
+| **Version lineage** | `post-launch-eval-v1.md` → `launch-readiness-v[N].md` → `prd-v[final].md` — full traceability across cycles |
+| **Pipeline state update** | `pipeline-state.md` gains `## Post-Launch Evaluation` with metric scorecard summary, verdict, and pointer to next cycle's pipeline directory |
+
 ### Feedback Loop Ordering
 
 ```
@@ -108,6 +136,9 @@ Stage 5 completes
   └─ [after Loop 2] Loop 3 fires (5→2): patch PRD with canonical prototype experience → prd-v[final].md
 
 Stage 6 starts after Loop 3 completes (needs final PRD)
+
+Stage 7 runs DEFERRED (user trigger or 30+ days post-GA)
+  └─ [on completion] Loop 4 fires (7→1): iteration backlog seeds next cycle's Researcher
 ```
 
 ## State Management
@@ -129,6 +160,7 @@ After each stage completes:
 | 4→2 (design→PRD) | pending/complete | design-spec-v1.md | prd-v4.md | — |
 | 5→4 (prototype→design) | pending/complete/skipped | prototype-v1.html | design-spec-v2.md | 87% |
 | 5→2 (prototype→PRD) | pending/complete | prototype-v1.html | prd-v[final].md | — |
+| 7→1 (post-launch→research) | deferred/complete | post-launch-eval-v1.md | [next cycle pipeline dir] | — |
 ```
 
 ## Context Pruning (borrowed from agentic-pm)
@@ -143,6 +175,8 @@ When handing off between stages, pass ONLY what the next stage needs. Note: the 
 - Loop 2 (5→4): fidelity report (full) → Designer + design-spec (full)
 - Loop 3 (5→2): prototype canonical experience summary → PRD Writer + latest prd version
 - Stage 6 gets: all artifacts (executive summaries) + design-spec latest version (full) + prd-v[final] (full) + prototype path
+- Stage 7 gets: launch-readiness (Sections 5, 11, 13 only) + prd-v[final] (JTBD list + North Star only) + user-provided post-launch metrics + incident log (if available)
+- Loop 4 (7→1, next cycle): iteration backlog + risk calibration + JTBD verdicts → next cycle's Researcher
 
 ## Error Handling
 

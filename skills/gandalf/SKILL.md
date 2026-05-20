@@ -6,7 +6,7 @@ description: >
   the pm-pipeline orchestrator invokes Stage 3. Asks predefined critique questions,
   requires evidence-backed answers, uses hybrid scoring. Pipeline never blocks — flags
   unanswered questions for human review.
-version: 0.1.0
+version: 0.2.0
 ---
 
 # Gandalf — Strategy & Problem Gate
@@ -19,9 +19,9 @@ Adapted from the adversarial-dev Evaluator pattern (coleam00/adversarial-dev): r
 - Latest PRD version (`prd-v[N].md`)
 - Research artifact (`research-v[N].md`) for cross-referencing claims
 
-## The 10 Critique Questions
+## The 11 Critique Questions
 
-Ask ALL 10 questions in Round 1. Each targets a specific dimension of strategy/problem quality.
+Ask ALL 11 questions in Round 1. Each targets a specific dimension of strategy/problem quality.
 
 | # | Dimension | Question |
 |---|-----------|----------|
@@ -35,6 +35,7 @@ Ask ALL 10 questions in Round 1. Each targets a specific dimension of strategy/p
 | 8 | **Cannibalization Risk** | Does this compete with or cannibalize any existing AWS service? If yes, what's the mitigation? |
 | 9 | **Failure Mode** | What's the most likely way this fails? Not "customers don't adopt" — a specific, falsifiable failure scenario. |
 | 10 | **Pricing & Business Model** | How does this affect pricing? Is there a clear path from this feature to revenue? |
+| 11 | **Solution Direction Deliberation** | Did the PRD Writer consider alternative solution directions from the Researcher's opportunity tree, or did they default to the first/obvious option? Show the Solution Lineage table and explain why rejected alternatives were inferior to the chosen direction. |
 
 ## Scoring Methodology — Hybrid
 
@@ -57,7 +58,7 @@ Each question is scored on two axes:
 A question **passes** if: Rubric Score >= 3 AND Evidence Score = 1
 
 ### Stage Pass/Fail
-The stage **passes** if: >= 8 out of 10 questions pass
+The stage **passes** if: >= 9 out of 11 questions pass
 
 ## Round Protocol
 
@@ -65,7 +66,7 @@ The stage **passes** if: >= 8 out of 10 questions pass
 
 ### Round 1: Initial Evaluation
 1. Read the PRD
-2. Ask all 10 questions
+2. Ask all 11 questions
 3. Score each based on what's already in the PRD
 4. For questions that fail: provide specific feedback on what's missing
 5. Return scores + feedback to the PRD Writer
@@ -92,14 +93,14 @@ prd-version: v[N]
 timestamp: [ISO 8601]
 status: passed | passed-with-flags | failed-moved-forward
 rounds-used: [1-3]
-pass-count: [X]/10
+pass-count: [X]/11
 ---
 
 # Gandalf Evaluation: [Feature Name]
 
 ## Verdict: [PASSED / PASSED WITH FLAGS / MOVED FORWARD WITH FLAGS]
 
-**Score: [X]/10 questions passed | Rounds used: [N]/3**
+**Score: [X]/11 questions passed | Rounds used: [N]/3**
 
 ## Detailed Scores
 
@@ -132,9 +133,15 @@ pass-count: [X]/10
 ```
 
 ## Rules
-- Ask all 10 questions — never skip any
+- Ask all 11 questions — never skip any
 - Score based on EVIDENCE, not effort. A long answer without data scores lower than a short answer with a citation.
 - When the PRD Writer says "this requires further research," accept it but flag it for human
 - Never invent data to pass a question. Intellectual honesty > throughput.
 - Be tough but constructive. Every failing score must come with specific, actionable feedback.
 - Critique the STRATEGY and PROBLEM, not the writing style or format
+- Q11 evaluates the PRD Writer's USE of the opportunity tree, not the tree's quality. The tree is a Researcher artifact — Gandalf does not co-author research. Focus on whether the PRD Writer demonstrated deliberate selection among alternatives.
+
+## Eval Learnings Log
+
+### v0.1.0 → v0.2.0 (2026-05-19, opportunity-tree change spec)
+1. No check on solution direction deliberation — PRD Writer could default to the obvious option without documenting why alternatives were rejected. Added Q11: Solution Direction Deliberation to evaluate PRD Writer's use of the Researcher's Opportunity-Solution Tree.

@@ -5,7 +5,7 @@ description: >
   "create product requirements", "draft product spec", or when the pm-pipeline orchestrator
   invokes Stage 2. Produces a customer-first PRD with persona, JTBD, problem depth,
   solution proposal, and 25 MECE FAQs.
-version: 0.2.0
+version: 0.3.0
 ---
 
 # Strategy & PRD Writer
@@ -43,7 +43,7 @@ Aim for at least 40% of citations from Tier 1-2. Note the tier when citing.
 | **Total Target** | **5,500-8,000 words** | Deep but decision-ready |
 
 ## Input
-- `research-v[N].md` from the Researcher stage
+- `research-v[N].md` from the Researcher stage (must include Opportunity-Solution Tree section)
 - Any user-provided context or constraints
 
 ## PRD Structure
@@ -93,6 +93,14 @@ For each proposed capability (not just a bullet — a paragraph per capability):
 - **What's new vs. status quo:** What customers CAN'T do today that this enables
 
 Also include:
+
+- **Solution Lineage table (mandatory):** Every selected capability must trace back to the Researcher's Opportunity-Solution Tree. This makes the convergent decision auditable — which branches you picked, which you left behind, and why.
+
+| Selected Capability | From Opportunity | Direction Chosen | Alternatives Rejected | Rejection Rationale |
+|---------------------|-----------------|-----------------|----------------------|---------------------|
+
+For each row: the "From Opportunity" and "Direction Chosen" columns must reference specific named opportunities and directions from the tree. The "Alternatives Rejected" column lists the other directions from that opportunity that were NOT selected. The "Rejection Rationale" must be specific (not "out of scope" but "requires Bedrock API dependency that adds 3 months to timeline"). If a capability does not trace to any tree direction, explain why — it may be a novel addition, but that must be justified.
+
 - Key differentiator vs. competitors (reference specific research findings with citation)
 - **Scope boundary table:**
 
@@ -183,6 +191,11 @@ sources-count: [number]
 [What it does, how it works, why it matters, what's new vs. status quo]
 [Repeat for each capability — paragraph per capability, not bullets]
 
+### Solution Lineage
+| Selected Capability | From Opportunity | Direction Chosen | Alternatives Rejected | Rejection Rationale |
+|---------------------|-----------------|-----------------|----------------------|---------------------|
+[...]
+
 ### Scope Boundary
 | Capability | v1 | v2 | v3 | Rationale |
 [...]
@@ -264,6 +277,7 @@ Never bluff. If you don't know, say "This requires further research" and flag it
 - [ ] Problem depth goes beyond symptoms to root cause with quantified cost of status quo
 - [ ] Solution section describes WHAT and WHY for each capability (not just names/bullets)
 - [ ] Solution section does NOT describe the UI/experience (that's the Designer's job)
+- [ ] Solution Lineage table exists — every capability traces to a tree opportunity/direction with rejected alternatives named
 - [ ] Scope boundary table exists with phasing rationale
 - [ ] Success metrics include North Star with rejected alternatives, anti-metrics, and phase gates
 - [ ] All 25 FAQs are present and MECE across 8 categories
@@ -290,3 +304,6 @@ Never bluff. If you don't know, say "This requires further research" and flag it
 10. No decision-to-inform framing — added decision-first statement matching Researcher
 11. PRD not self-contained — required research doc to understand context; added self-containment rule
 12. No PRD best practices from external repos — added phuryn discovery chain, sdi2200262 context pruning, adversarial-dev evaluator integration patterns
+
+### v0.2.0 → v0.3.0 (2026-05-19, opportunity-tree change spec)
+13. No solution lineage — PRD Writer jumped from research gaps to solution proposal without documenting which alternative directions were considered and rejected. Added mandatory Solution Lineage table to Section 2 and updated input contract to require Opportunity-Solution Tree from Researcher.

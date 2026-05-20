@@ -1,0 +1,1947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Control Plane - CloudWatch</title>
+  <style>
+    /* ===== RESET ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ===== CSS CUSTOM PROPERTIES (LIGHT THEME) ===== */
+    :root {
+      --color-bg-page: #f2f3f3;
+      --color-bg-container: #ffffff;
+      --color-bg-header: #0f1b2a;
+      --color-bg-nav: #0f1b2a;
+      --color-bg-input: #ffffff;
+      --color-bg-hover: #f0f6ff;
+      --color-bg-selected: #e6f0ff;
+      --color-bg-button-primary: #0972d3;
+      --color-bg-button-primary-hover: #033160;
+      --color-bg-button-primary-active: #022244;
+      --color-bg-button-primary-disabled: #c4c4c4;
+      --color-bg-button-normal: #ffffff;
+      --color-bg-button-normal-hover: #fafafa;
+      --color-bg-badge: #e9ebed;
+      --color-bg-skeleton: #e9ebed;
+      --color-bg-dropdown-hover: #f0f6ff;
+      --color-bg-container-hover: #fafbfc;
+      --color-bg-container-active: #f0f1f3;
+      --color-bg-item-selected: #e6f0ff;
+
+      --color-text-primary: #000716;
+      --color-text-secondary: #5f6b7a;
+      --color-text-inverse: #ffffff;
+      --color-text-link: #0972d3;
+      --color-text-accent: #0972d3;
+      --color-text-body-secondary: #5f6b7a;
+
+      --color-border-light: #e9ebed;
+      --color-border-medium: #d1d5db;
+      --color-border-input: #7d8998;
+      --color-border-input-hover: #5f6b7a;
+      --color-border-control-focus: #0972d3;
+      --color-border-selected: #0972d3;
+
+      --color-status-positive: #037f0c;
+      --color-status-positive-bg: #f2fcf3;
+      --color-status-warning: #8d6605;
+      --color-status-warning-bg: #fef8e7;
+      --color-status-negative: #d91515;
+      --color-status-negative-bg: #fff7f7;
+      --color-status-info: #0972d3;
+      --color-status-info-bg: #f0f6ff;
+      --color-status-unknown: #9ba7b6;
+
+      --color-chart-primary: #0972d3;
+      --color-chart-secondary: #4da6ff;
+      --color-chart-tertiary: #89c4ff;
+
+      --radius: 16px;
+      --radius-sm: 8px;
+      --shadow-sm: 0 1px 2px rgba(0,7,22,.12);
+      --shadow-md: 0 2px 8px rgba(0,7,22,.12);
+      --shadow-lg: 0 4px 20px rgba(0,7,22,.15);
+      --font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --nav-width: 240px;
+      --header-height: 48px;
+
+      --transition-fast: 150ms ease-out;
+      --transition-normal: 200ms ease-out;
+      --transition-panel: 200ms ease-out;
+      --transition-fade: 150ms ease-in-out;
+    }
+
+    /* ===== DARK MODE ===== */
+    body.dark-mode {
+      --color-bg-page: #0f1b2a;
+      --color-bg-container: #192534;
+      --color-bg-header: #0a1929;
+      --color-bg-nav: #0a1929;
+      --color-bg-input: #192534;
+      --color-bg-hover: #1a3a5c;
+      --color-bg-selected: #1a3a5c;
+      --color-bg-button-primary: #539fe5;
+      --color-bg-button-primary-hover: #89c4ff;
+      --color-bg-button-primary-active: #4da6ff;
+      --color-bg-button-primary-disabled: #354b63;
+      --color-bg-button-normal: #192534;
+      --color-bg-button-normal-hover: #1a3050;
+      --color-bg-badge: #354b63;
+      --color-bg-skeleton: #253b50;
+      --color-bg-dropdown-hover: #1a3a5c;
+      --color-bg-container-hover: #1a3050;
+      --color-bg-container-active: #253b50;
+      --color-bg-item-selected: #1a3a5c;
+
+      --color-text-primary: #d1d5db;
+      --color-text-secondary: #8d9db5;
+      --color-text-inverse: #ffffff;
+      --color-text-link: #539fe5;
+      --color-text-accent: #539fe5;
+      --color-text-body-secondary: #8d9db5;
+
+      --color-border-light: #253b50;
+      --color-border-medium: #354b63;
+      --color-border-input: #5f6b7a;
+      --color-border-input-hover: #8d9db5;
+      --color-border-control-focus: #539fe5;
+      --color-border-selected: #539fe5;
+
+      --color-status-positive: #29a34a;
+      --color-status-positive-bg: #0d2b13;
+      --color-status-warning: #c9a227;
+      --color-status-warning-bg: #2b2309;
+      --color-status-negative: #eb5757;
+      --color-status-negative-bg: #2b0e0e;
+      --color-status-info: #539fe5;
+      --color-status-info-bg: #0d2345;
+      --color-status-unknown: #5f6b7a;
+
+      --color-chart-primary: #539fe5;
+      --color-chart-secondary: #89c4ff;
+      --color-chart-tertiary: #4da6ff;
+
+      --shadow-sm: 0 1px 2px rgba(0,0,0,.3);
+      --shadow-md: 0 2px 8px rgba(0,0,0,.3);
+      --shadow-lg: 0 4px 20px rgba(0,0,0,.4);
+    }
+
+    /* ===== COST INTELLIGENCE PAGE ===== */
+    .cost-page { display: none; }
+    .cost-page.active { display: block; }
+    .cost-summary-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;
+    }
+    @media (max-width: 900px) { .cost-summary-grid { grid-template-columns: repeat(2, 1fr); } }
+    .cost-summary-card {
+      background: var(--color-bg-container); border: 1px solid var(--color-border-light);
+      border-radius: var(--radius-sm); padding: 16px;
+    }
+    .cost-summary-card .csc-label { font-size: 12px; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+    .cost-summary-card .csc-value { font-size: 28px; font-weight: 700; color: var(--color-text-primary); margin-top: 4px; }
+    .cost-summary-card .csc-sub { font-size: 12px; color: var(--color-text-secondary); margin-top: 4px; }
+
+    .cost-chart-container {
+      background: var(--color-bg-container); border: 1px solid var(--color-border-light);
+      border-radius: var(--radius-sm); padding: 20px; margin-bottom: 24px;
+    }
+    .cost-chart-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--color-text-primary); }
+    .hbar-row { display: flex; align-items: center; margin-bottom: 10px; }
+    .hbar-label { width: 200px; font-size: 13px; color: var(--color-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; }
+    .hbar-track { flex: 1; height: 24px; background: var(--color-bg-page); border-radius: 4px; overflow: hidden; margin: 0 12px; position: relative; }
+    .hbar-fill { height: 100%; border-radius: 4px; transition: width 0.3s ease; }
+    .hbar-fill.tier-premium { background: var(--color-chart-primary); }
+    .hbar-fill.tier-standard { background: var(--color-chart-secondary); }
+    .hbar-fill.tier-economy { background: var(--color-chart-tertiary); }
+    .hbar-value { font-size: 13px; font-weight: 600; color: var(--color-text-primary); width: 80px; text-align: right; flex-shrink: 0; }
+
+    .cost-reco-table { width: 100%; border-collapse: collapse; }
+    .cost-reco-table th {
+      text-align: left; font-size: 12px; font-weight: 600; color: var(--color-text-secondary);
+      text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 12px;
+      border-bottom: 2px solid var(--color-border-light);
+    }
+    .cost-reco-table td {
+      padding: 12px; border-bottom: 1px solid var(--color-border-light); font-size: 13px;
+      color: var(--color-text-primary);
+    }
+    .reco-status { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+    .reco-status-new { background: var(--color-status-info-bg); color: var(--color-status-info); }
+    .reco-status-applied { background: var(--color-status-positive-bg); color: var(--color-status-positive); }
+    .reco-status-dismissed { background: var(--color-bg-badge); color: var(--color-text-secondary); }
+
+    .cost-trend-chart { height: 120px; display: flex; align-items: flex-end; gap: 2px; }
+    .cost-trend-bar { flex: 1; border-radius: 2px 2px 0 0; transition: height 0.3s ease; position: relative; }
+    .cost-trend-bar:hover { opacity: 0.8; }
+
+    /* ===== COST RECOMMENDATION ALERT (Split Panel) ===== */
+    .cost-reco-alert {
+      background: var(--color-status-info-bg); border: 1px solid var(--color-status-info);
+      border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 16px;
+      display: flex; gap: 12px; align-items: flex-start;
+    }
+    .cost-reco-alert .cra-icon { color: var(--color-status-info); font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+    .cost-reco-alert .cra-body { flex: 1; }
+    .cost-reco-alert .cra-title { font-weight: 700; font-size: 14px; color: var(--color-text-primary); margin-bottom: 4px; }
+    .cost-reco-alert .cra-desc { font-size: 13px; color: var(--color-text-primary); line-height: 1.5; }
+    .cost-reco-alert .cra-actions { display: flex; gap: 12px; margin-top: 10px; }
+    .cost-reco-alert .cra-btn {
+      background: none; border: none; cursor: pointer; font-family: var(--font-family);
+      font-size: 13px; font-weight: 600; padding: 4px 0;
+    }
+    .cost-reco-alert .cra-btn-primary { color: var(--color-text-link); }
+    .cost-reco-alert .cra-btn-primary:hover { text-decoration: underline; }
+    .cost-reco-alert .cra-btn-secondary { color: var(--color-text-secondary); }
+    .cost-reco-alert .cra-btn-secondary:hover { color: var(--color-text-primary); }
+
+    /* ===== CONFIDENCE BADGE ===== */
+    .confidence-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px;
+    }
+    .confidence-high { background: var(--color-status-positive-bg); color: var(--color-status-positive); }
+    .confidence-medium { background: var(--color-status-warning-bg); color: var(--color-status-warning); }
+    .confidence-unverified { background: var(--color-status-warning-bg); color: var(--color-status-warning); }
+
+    /* ===== REDUCED MOTION ===== */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        transition-duration: 0ms !important;
+        animation-duration: 0ms !important;
+      }
+    }
+
+    /* ===== SKIP LINKS ===== */
+    .skip-link {
+      position: absolute; top: -40px; left: 0; z-index: 10000;
+      background: var(--color-bg-button-primary); color: var(--color-text-inverse);
+      padding: 8px 16px; font-size: 14px; text-decoration: none;
+      border-radius: 0 0 var(--radius-sm) 0;
+    }
+    .skip-link:focus { top: 0; outline: 2px solid var(--color-border-control-focus); outline-offset: 2px; }
+
+    /* ===== BASE ===== */
+    body {
+      font-family: var(--font-family);
+      background: var(--color-bg-page);
+      color: var(--color-text-primary);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* ===== FOCUS RING ===== */
+    :focus-visible {
+      outline: 2px solid var(--color-border-control-focus);
+      outline-offset: 2px;
+    }
+    :focus:not(:focus-visible) { outline: none; }
+
+    /* ===== TOP HEADER BAR (banner) ===== */
+    .top-header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+      height: var(--header-height);
+      background: var(--color-bg-header);
+      display: flex; align-items: center;
+      padding: 0 20px;
+      color: var(--color-text-inverse);
+    }
+    .top-header .logo { font-weight: 700; font-size: 15px; letter-spacing: -0.2px; }
+    .top-header .logo span { color: #ff9900; }
+    .top-header .breadcrumb { margin-left: 24px; font-size: 13px; color: #8d9db5; }
+    .top-header .breadcrumb a { color: #8d9db5; text-decoration: none; }
+    .top-header .breadcrumb a:focus-visible { outline: 2px solid var(--color-border-control-focus); outline-offset: 2px; }
+    .top-header .breadcrumb a:hover { color: #fff; text-decoration: underline; }
+    .top-header .breadcrumb .sep { margin: 0 6px; }
+    .top-header .header-actions { margin-left: auto; display: flex; gap: 12px; align-items: center; }
+    .top-header .header-actions .time-badge {
+      background: rgba(255,255,255,0.1); border-radius: 4px; padding: 4px 10px; font-size: 12px;
+    }
+
+    /* ===== DARK MODE TOGGLE ===== */
+    .dark-toggle {
+      background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 4px; padding: 4px 10px; font-size: 12px; color: var(--color-text-inverse);
+      cursor: pointer; font-family: var(--font-family); transition: background var(--transition-fast);
+    }
+    .dark-toggle:hover { background: rgba(255,255,255,0.2); }
+    .dark-toggle:focus-visible { outline: 2px solid var(--color-border-control-focus); outline-offset: 2px; }
+
+    /* ===== SIDE NAVIGATION ===== */
+    .side-nav {
+      position: fixed; top: var(--header-height); left: 0; bottom: 0;
+      width: var(--nav-width); background: var(--color-bg-nav);
+      padding: 16px 0; overflow-y: auto; z-index: 900;
+    }
+    .nav-section-title {
+      color: #8d9db5; font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.5px; padding: 12px 20px 6px; margin-top: 8px;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 20px; color: #d1d5db; font-size: 14px; cursor: pointer;
+      transition: all var(--transition-fast); text-decoration: none;
+      border-left: 3px solid transparent; background: none; border-right: none;
+      border-top: none; border-bottom: none; width: 100%; font-family: var(--font-family);
+    }
+    .nav-item:hover { background: rgba(255,255,255,0.06); color: #fff; }
+    .nav-item:focus-visible { outline: 2px solid var(--color-border-control-focus); outline-offset: -2px; }
+    .nav-item.active { background: rgba(9,114,211,0.15); color: #539fe5; border-left-color: #539fe5; font-weight: 700; }
+    .nav-item .nav-icon { width: 18px; text-align: center; font-size: 13px; }
+    .nav-item .nav-badge {
+      margin-left: auto; background: var(--color-status-negative); color: #fff;
+      font-size: 11px; padding: 1px 7px; border-radius: 10px; font-weight: 600;
+    }
+    .nav-divider { height: 1px; background: rgba(255,255,255,0.08); margin: 8px 16px; }
+
+    /* ===== MAIN CONTENT ===== */
+    .main-content {
+      margin-left: var(--nav-width); margin-top: var(--header-height);
+      padding: 24px; min-height: calc(100vh - var(--header-height));
+      transition: margin-bottom 0.3s ease;
+    }
+    .main-content.split-open { margin-bottom: 420px; }
+
+    /* ===== PAGE HEADER ===== */
+    .page-header {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      margin-bottom: 24px;
+    }
+    .page-header h1 { font-size: 24px; font-weight: 700; color: var(--color-text-primary); }
+    .page-header .subtitle { color: var(--color-text-secondary); font-size: 14px; margin-top: 4px; }
+    .page-header .actions { display: flex; gap: 8px; align-items: center; }
+
+    /* ===== FLASHBAR ===== */
+    .flashbar {
+      background: var(--color-status-info-bg); border: 1px solid var(--color-border-control-focus);
+      border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 20px;
+      display: flex; align-items: center; gap: 10px; font-size: 14px;
+      animation: flashbar-slide-in 300ms ease-out backwards;
+      opacity: 1; transition: opacity 200ms ease-in, transform 200ms ease-in;
+    }
+    .flashbar.dismissing { opacity: 0; transform: translateY(-10px); }
+    @keyframes flashbar-slide-in {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .flashbar .flash-icon { font-size: 16px; flex-shrink: 0; }
+    .flashbar .flash-dismiss {
+      margin-left: auto; background: none; border: none; cursor: pointer;
+      color: var(--color-text-secondary); font-size: 16px; padding: 4px;
+      border-radius: 4px; font-family: var(--font-family);
+    }
+    .flashbar .flash-dismiss:hover { background: var(--color-bg-badge); }
+    .flashbar .flash-dismiss:focus-visible { outline: 2px solid var(--color-border-control-focus); outline-offset: 2px; }
+    .flashbar .flash-link { color: var(--color-text-link); text-decoration: none; font-weight: 600; }
+    .flashbar .flash-link:hover { text-decoration: underline; }
+    .flashbar .flash-link:focus-visible { outline: 2px solid var(--color-border-control-focus); outline-offset: 2px; }
+
+    /* ===== BUTTONS ===== */
+    .btn {
+      padding: 6px 16px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600;
+      cursor: pointer; transition: all var(--transition-fast); display: inline-flex;
+      align-items: center; gap: 6px; border: 2px solid transparent;
+      font-family: var(--font-family);
+    }
+    .btn:focus-visible { outline: 2px solid var(--color-border-control-focus); outline-offset: 2px; }
+    .btn-primary {
+      background: var(--color-bg-button-primary); color: var(--color-text-inverse);
+      border-color: var(--color-bg-button-primary);
+    }
+    .btn-primary:hover {
+      background: var(--color-bg-button-primary-hover);
+      border-color: var(--color-bg-button-primary-hover);
+    }
+    .btn-primary:active {
+      background: var(--color-bg-button-primary-active);
+      border-color: var(--color-bg-button-primary-active);
+    }
+    .btn-primary:disabled {
+      background: var(--color-bg-button-primary-disabled);
+      border-color: var(--color-bg-button-primary-disabled);
+      color: var(--color-text-secondary); cursor: not-allowed;
+    }
+    .btn-normal {
+      background: var(--color-bg-button-normal); color: var(--color-text-primary);
+      border-color: var(--color-border-medium);
+    }
+    .btn-normal:hover { background: var(--color-bg-button-normal-hover); border-color: var(--color-border-input); }
+    .btn-normal:active { background: var(--color-bg-container-active); }
+    .btn-icon {
+      background: none; border: none; cursor: pointer;
+      color: var(--color-text-secondary); padding: 6px; border-radius: 4px;
+      font-family: var(--font-family); font-size: 14px;
+    }
+    .btn-icon:hover { background: var(--color-bg-badge); color: var(--color-text-primary); }
+    .btn-icon:focus-visible { outline: 2px solid var(--color-border-control-focus); outline-offset: 2px; }
+
+    /* ===== DROPDOWN ===== */
+    .btn-dropdown { position: relative; }
+    .btn-dropdown .dropdown-menu {
+      position: absolute; top: 100%; right: 0; margin-top: 4px;
+      background: var(--color-bg-container); border: 1px solid var(--color-border-light);
+      border-radius: var(--radius-sm); box-shadow: var(--shadow-lg);
+      min-width: 220px; z-index: 100; display: none;
+    }
+    .btn-dropdown.open .dropdown-menu { display: block; }
+    .dropdown-item {
+      padding: 8px 16px; cursor: pointer; font-size: 14px;
+      display: flex; align-items: center; gap: 8px;
+      color: var(--color-text-primary); transition: background var(--transition-fast);
+      background: none; border: none; width: 100%;
+      font-family: var(--font-family); text-align: left;
+    }
+    .dropdown-item:hover { background: var(--color-bg-dropdown-hover); }
+    .dropdown-item:focus-visible { outline: 2px solid var(--color-border-control-focus); outline-offset: -2px; }
+
+    /* ===== SUMMARY CARDS ===== */
+    .summary-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;
+    }
+    .summary-card {
+      background: var(--color-bg-container); border-radius: var(--radius); padding: 20px;
+      border: 1px solid var(--color-border-light); box-shadow: var(--shadow-sm);
+      transition: background var(--transition-fast), box-shadow var(--transition-fast);
+      cursor: default;
+    }
+    .summary-card:hover { box-shadow: var(--shadow-md); background: var(--color-bg-container-hover); }
+    .summary-card .card-label {
+      font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px;
+      color: var(--color-text-secondary); margin-bottom: 8px;
+    }
+    .summary-card .card-value { font-size: 36px; font-weight: 700; color: var(--color-text-primary); line-height: 1; }
+    .summary-card .card-trend {
+      display: inline-flex; align-items: center; gap: 4px; font-size: 13px; margin-top: 8px;
+      padding: 2px 8px; border-radius: 4px;
+    }
+    .trend-up { background: var(--color-status-positive-bg); color: var(--color-status-positive); }
+    .trend-down { background: var(--color-status-negative-bg); color: var(--color-status-negative); }
+    .trend-neutral { background: var(--color-bg-badge); color: var(--color-text-secondary); }
+    .card-subtitle { font-size: 12px; color: var(--color-text-secondary); margin-top: 4px; }
+    .card-sparkline { margin-top: 8px; display: flex; align-items: flex-end; gap: 2px; height: 28px; }
+    .card-sparkline .spark-bar {
+      flex: 1; border-radius: 1px 1px 0 0; transition: height 300ms ease-out;
+      background: var(--color-chart-primary); opacity: 0.5;
+    }
+    .card-sparkline .spark-bar:last-child { opacity: 1; }
+
+    /* ===== CONTAINER ===== */
+    .container-panel {
+      background: var(--color-bg-container); border-radius: var(--radius); padding: 0;
+      border: 1px solid var(--color-border-light); box-shadow: var(--shadow-sm);
+      margin-bottom: 24px; overflow: hidden;
+    }
+    .container-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px; border-bottom: 1px solid var(--color-border-light);
+    }
+    .container-header h2 { font-size: 18px; font-weight: 700; color: var(--color-text-primary); }
+    .container-header .header-counter {
+      background: var(--color-bg-badge); padding: 2px 10px; border-radius: 10px;
+      font-size: 12px; font-weight: 600; margin-left: 8px; color: var(--color-text-secondary);
+    }
+
+    /* ===== PROPERTY FILTER ===== */
+    .property-filter {
+      padding: 12px 20px; border-bottom: 1px solid var(--color-border-light);
+      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    }
+    .filter-input-wrap { position: relative; flex: 1; min-width: 200px; }
+    .filter-input {
+      width: 100%; padding: 7px 12px; border: 1px solid var(--color-border-input);
+      border-radius: var(--radius-sm); font-size: 14px; font-family: var(--font-family);
+      outline: none; background: var(--color-bg-input); color: var(--color-text-primary);
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    }
+    .filter-input:hover { border-color: var(--color-border-input-hover); }
+    .filter-input:focus { border-color: var(--color-border-control-focus); box-shadow: 0 0 0 2px rgba(9,114,211,0.2); }
+    .filter-token {
+      display: inline-flex; align-items: center; gap: 4px; background: var(--color-bg-badge);
+      border-radius: 4px; padding: 4px 8px; font-size: 13px; color: var(--color-text-primary);
+      transition: background var(--transition-fast);
+    }
+    .filter-token:hover { background: var(--color-border-medium); }
+    .filter-token .remove-token {
+      background: none; border: none; cursor: pointer; font-size: 14px;
+      color: var(--color-text-secondary); padding: 0 2px; line-height: 1;
+      font-family: var(--font-family); border-radius: 2px;
+    }
+    .filter-token .remove-token:hover { color: var(--color-text-primary); }
+    .filter-token .remove-token:focus-visible { outline: 2px solid var(--color-border-control-focus); outline-offset: 1px; }
+    .filter-clear {
+      background: none; border: none; cursor: pointer; color: var(--color-text-link);
+      font-size: 13px; font-weight: 600; font-family: var(--font-family); padding: 4px 8px;
+    }
+    .filter-clear:hover { text-decoration: underline; }
+    .filter-clear:focus-visible { outline: 2px solid var(--color-border-control-focus); outline-offset: 2px; }
+    .filter-suggestions {
+      position: absolute; top: 100%; left: 0; right: 0;
+      background: var(--color-bg-container); border: 1px solid var(--color-border-light);
+      border-radius: var(--radius-sm); box-shadow: var(--shadow-lg);
+      z-index: 50; display: none; max-height: 300px; overflow-y: auto;
+    }
+    .filter-suggestion {
+      padding: 8px 12px; cursor: pointer; font-size: 13px;
+      color: var(--color-text-primary); transition: background var(--transition-fast);
+    }
+    .filter-suggestion:hover { background: var(--color-bg-dropdown-hover); }
+    .filter-suggestion .suggestion-cat { color: var(--color-text-secondary); font-size: 12px; }
+    .filter-empty-results {
+      padding: 40px 20px; text-align: center; color: var(--color-text-secondary);
+    }
+    .filter-empty-results .empty-icon { font-size: 40px; margin-bottom: 12px; display: block; }
+    .filter-empty-results .empty-title { font-size: 16px; font-weight: 600; color: var(--color-text-primary); margin-bottom: 4px; }
+    .filter-empty-results .empty-subtitle { font-size: 14px; margin-bottom: 12px; }
+
+    /* ===== DATA TABLE ===== */
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table thead th {
+      text-align: left; padding: 10px 16px; font-size: 12px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.3px; color: var(--color-text-secondary);
+      border-bottom: 2px solid var(--color-border-light); background: var(--color-bg-container-hover);
+      cursor: pointer; user-select: none; white-space: nowrap;
+      transition: background var(--transition-fast);
+    }
+    .data-table thead th:hover { background: var(--color-bg-container-active); }
+    .data-table thead th .sort-icon { margin-left: 4px; font-size: 10px; opacity: 0.4; }
+    .data-table thead th.sorted .sort-icon { opacity: 1; color: var(--color-text-accent); }
+    .data-table tbody tr {
+      cursor: pointer; transition: background 0.1s;
+    }
+    .data-table tbody tr:hover { background: var(--color-bg-hover); }
+    .data-table tbody tr.selected { background: var(--color-bg-selected); border-left: 4px solid var(--color-border-selected); }
+    .data-table tbody tr:focus-visible { outline: 2px solid var(--color-border-control-focus); outline-offset: -2px; }
+    .data-table tbody td {
+      padding: 12px 16px; border-bottom: 1px solid var(--color-border-light);
+      font-size: 14px; color: var(--color-text-primary);
+    }
+    .data-table .cell-name { font-weight: 600; color: var(--color-text-link); }
+    .data-table .cell-secondary { color: var(--color-text-secondary); font-size: 13px; }
+    .data-table .cell-mono { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 13px; }
+
+    /* Status indicators with icons (never color alone) */
+    .status { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; }
+    .status-icon { flex-shrink: 0; font-size: 14px; }
+    .status-healthy { color: var(--color-status-positive); }
+    .status-warning { color: var(--color-status-warning); }
+    .status-error { color: var(--color-status-negative); }
+    .status-unknown { color: var(--color-status-unknown); }
+
+    /* Guardrail badges */
+    .guardrail-badge {
+      display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px;
+      border-radius: 4px; font-size: 12px; font-weight: 600;
+    }
+    .guardrail-active { background: var(--color-status-positive-bg); color: var(--color-status-positive); }
+    .guardrail-partial { background: var(--color-status-warning-bg); color: var(--color-status-warning); }
+    .guardrail-none { background: var(--color-status-negative-bg); color: var(--color-status-negative); }
+
+    /* Sparkline */
+    .inline-sparkline { display: inline-flex; align-items: flex-end; gap: 1px; height: 24px; vertical-align: middle; }
+    .inline-sparkline .spark-bar {
+      border-radius: 1px 1px 0 0; min-width: 6px; transition: height 200ms ease-out;
+      background: var(--color-chart-primary); opacity: 0.6;
+    }
+    .inline-sparkline .spark-bar:hover { opacity: 1; }
+
+    /* Pagination */
+    .table-footer {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 20px; border-top: 1px solid var(--color-border-light);
+      background: var(--color-bg-container-hover);
+    }
+    .table-footer .page-info { font-size: 13px; color: var(--color-text-secondary); }
+    .pagination { display: flex; gap: 4px; }
+    .pagination button {
+      padding: 4px 10px; border: 1px solid var(--color-border-medium); border-radius: 4px;
+      background: var(--color-bg-container); cursor: pointer; font-size: 13px;
+      font-family: var(--font-family); color: var(--color-text-primary);
+      transition: background var(--transition-fast);
+    }
+    .pagination button:hover { background: var(--color-bg-hover); }
+    .pagination button:focus-visible { outline: 2px solid var(--color-border-control-focus); outline-offset: 2px; }
+    .pagination button.active { background: var(--color-bg-button-primary); color: var(--color-text-inverse); border-color: var(--color-bg-button-primary); }
+    .pagination button:disabled { opacity: 0.4; cursor: default; }
+
+    /* ===== SPLIT PANEL ===== */
+    .split-panel {
+      position: fixed; bottom: 0; left: var(--nav-width); right: 0; height: 420px;
+      background: var(--color-bg-container); border-top: 2px solid var(--color-border-light);
+      box-shadow: 0 -4px 20px rgba(0,7,22,.1);
+      transform: translateY(100%); transition: transform var(--transition-panel);
+      z-index: 800;
+    }
+    .split-panel.open { transform: translateY(0); }
+    .split-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 20px; border-bottom: 1px solid var(--color-border-light);
+      background: var(--color-bg-container-hover);
+    }
+    .split-header h3 { font-size: 16px; font-weight: 700; color: var(--color-text-primary); }
+    .split-header .split-subtitle { color: var(--color-text-secondary); font-size: 13px; margin-left: 8px; }
+    .split-close {
+      background: none; border: none; cursor: pointer; font-size: 20px;
+      color: var(--color-text-secondary); padding: 4px 8px; border-radius: 4px;
+      font-family: var(--font-family);
+    }
+    .split-close:hover { background: var(--color-bg-badge); color: var(--color-text-primary); }
+    .split-close:focus-visible { outline: 2px solid var(--color-border-control-focus); outline-offset: 2px; }
+
+    /* Split panel tabs */
+    .split-tabs {
+      display: flex; border-bottom: 1px solid var(--color-border-light);
+      padding: 0 20px; background: var(--color-bg-container-hover);
+    }
+    .split-tab {
+      padding: 10px 16px; font-size: 14px; cursor: pointer;
+      border-bottom: 3px solid transparent;
+      color: var(--color-text-secondary); font-weight: 600;
+      transition: all var(--transition-fast);
+      background: none; border-top: none; border-left: none; border-right: none;
+      font-family: var(--font-family);
+    }
+    .split-tab:hover { color: var(--color-text-primary); }
+    .split-tab:focus-visible { outline: 2px solid var(--color-border-control-focus); outline-offset: -2px; }
+    .split-tab.active { color: var(--color-text-accent); border-bottom-color: var(--color-text-accent); }
+    .split-content { padding: 20px; overflow-y: auto; height: calc(420px - 100px); }
+    .tab-pane { display: none; opacity: 0; transition: opacity var(--transition-fade); }
+    .tab-pane.active { display: block; opacity: 1; }
+
+    /* KV Pairs */
+    .kv-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .kv-item .kv-label {
+      font-size: 12px; color: var(--color-text-secondary); font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.3px;
+    }
+    .kv-item .kv-value { font-size: 14px; font-weight: 600; margin-top: 4px; color: var(--color-text-primary); }
+
+    /* Inline alert */
+    .inline-alert {
+      display: flex; align-items: flex-start; gap: 10px; padding: 12px 16px;
+      border-radius: var(--radius-sm); margin-top: 16px;
+    }
+    .inline-alert.alert-warning { background: var(--color-status-warning-bg); border: 1px solid var(--color-status-warning); }
+    .inline-alert.alert-error { background: var(--color-status-negative-bg); border: 1px solid var(--color-status-negative); }
+    .inline-alert.alert-info { background: var(--color-status-info-bg); border: 1px solid var(--color-status-info); }
+    .inline-alert .alert-icon { font-size: 16px; margin-top: 1px; flex-shrink: 0; }
+    .inline-alert .alert-text { flex: 1; font-size: 13px; color: var(--color-text-primary); }
+    .inline-alert .alert-title { font-weight: 700; margin-bottom: 2px; }
+
+    /* Chart area */
+    .chart-area {
+      background: var(--color-bg-container-hover); border: 1px solid var(--color-border-light);
+      border-radius: var(--radius-sm); padding: 16px; margin-top: 16px;
+    }
+    .chart-area .chart-title {
+      font-size: 13px; font-weight: 600; color: var(--color-text-secondary); margin-bottom: 12px;
+    }
+    .mini-chart { display: flex; align-items: flex-end; gap: 3px; height: 80px; }
+    .mini-bar {
+      background: var(--color-chart-primary); border-radius: 2px 2px 0 0;
+      min-width: 18px; transition: height 0.3s, opacity var(--transition-fast); opacity: 0.7;
+    }
+    .mini-bar:hover { opacity: 1; }
+
+    /* Nested table */
+    .nested-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    .nested-table th {
+      text-align: left; padding: 8px 12px; font-size: 12px; font-weight: 600;
+      color: var(--color-text-secondary); background: var(--color-bg-container-hover);
+      border-bottom: 1px solid var(--color-border-light);
+    }
+    .nested-table td {
+      padding: 8px 12px; font-size: 13px; border-bottom: 1px solid var(--color-border-light);
+      color: var(--color-text-primary);
+    }
+
+    /* Timeline */
+    .timeline-item {
+      display: flex; gap: 12px; padding: 10px 0;
+      border-bottom: 1px solid var(--color-border-light);
+    }
+    .timeline-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--color-chart-primary); margin-top: 6px; flex-shrink: 0;
+    }
+    .timeline-item .tl-time { font-size: 12px; color: var(--color-text-secondary); min-width: 140px; }
+    .timeline-item .tl-event { font-size: 13px; color: var(--color-text-primary); }
+
+    /* ===== MATURITY SECTION ===== */
+    .maturity-section { margin-top: 24px; }
+    .maturity-bar-track {
+      background: var(--color-bg-badge); border-radius: 8px; height: 12px;
+      overflow: hidden; margin-top: 8px;
+    }
+    .maturity-bar-fill {
+      height: 100%; border-radius: 8px; transition: width 0.6s ease;
+      background: linear-gradient(90deg, var(--color-chart-primary), var(--color-chart-secondary));
+    }
+    .maturity-level-label { font-size: 13px; color: var(--color-text-secondary); margin-top: 4px; }
+    .maturity-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; }
+    .maturity-action-card {
+      background: var(--color-bg-container-hover); border: 1px solid var(--color-border-light);
+      border-radius: var(--radius-sm); padding: 16px;
+      transition: box-shadow var(--transition-fast), background var(--transition-fast);
+    }
+    .maturity-action-card:hover { box-shadow: var(--shadow-md); }
+    .maturity-action-card .mac-title { font-weight: 600; font-size: 14px; margin-bottom: 4px; color: var(--color-text-primary); }
+    .maturity-action-card .mac-desc { font-size: 13px; color: var(--color-text-secondary); }
+    .maturity-action-card .mac-impact {
+      display: inline-block; margin-top: 8px; font-size: 12px; font-weight: 600;
+      padding: 2px 8px; border-radius: 4px;
+      background: var(--color-status-positive-bg); color: var(--color-status-positive);
+    }
+
+    /* ===== DATE RANGE PICKER ===== */
+    .date-range-picker {
+      display: inline-flex; align-items: center; gap: 0;
+      border: 1px solid var(--color-border-medium);
+      border-radius: var(--radius-sm); overflow: hidden; font-size: 13px;
+      background: var(--color-bg-container);
+    }
+    .drp-option {
+      padding: 6px 12px; cursor: pointer; border-right: 1px solid var(--color-border-light);
+      transition: all var(--transition-fast); font-family: var(--font-family);
+      background: none; border-top: none; border-bottom: none; border-left: none;
+      color: var(--color-text-primary);
+    }
+    .drp-option:last-child { border-right: none; }
+    .drp-option:hover { background: var(--color-bg-hover); }
+    .drp-option:focus-visible { outline: 2px solid var(--color-border-control-focus); outline-offset: -2px; }
+    .drp-option.active { background: var(--color-bg-button-primary); color: var(--color-text-inverse); }
+
+    /* ===== ARIA LIVE REGION ===== */
+    .sr-only {
+      position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+    }
+
+    /* ===== RESPONSIVE BREAKPOINTS ===== */
+    /* L: 1200-1599 (design target) — default styles above */
+
+    /* M: 992-1199 (tablet) */
+    @media (max-width: 1199px) {
+      .summary-grid { grid-template-columns: repeat(2, 1fr); }
+      .kv-grid { grid-template-columns: repeat(2, 1fr); }
+      .maturity-actions { grid-template-columns: repeat(2, 1fr); }
+      .side-nav { width: 56px; overflow: visible; }
+      .side-nav .nav-section-title { display: none; }
+      .side-nav .nav-item span:not(.nav-icon):not(.nav-badge) { display: none; }
+      .side-nav .nav-item .nav-badge { display: none; }
+      .side-nav .nav-item { padding: 10px 0; justify-content: center; gap: 0; }
+      .side-nav .nav-item .nav-icon { width: auto; font-size: 16px; }
+      .main-content { margin-left: 56px; }
+      .split-panel { left: 56px; }
+      .data-table .col-cost, .data-table .col-last-active { display: none; }
+    }
+
+    /* S: 688-991 (small tablet) */
+    @media (max-width: 991px) {
+      .summary-grid { grid-template-columns: repeat(2, 1fr); }
+      .data-table .col-account, .data-table .col-cost, .data-table .col-last-active, .data-table .col-trend { display: none; }
+      .split-panel { height: 70vh; }
+      .split-content { height: calc(70vh - 100px); }
+    }
+
+    /* XS: <688 (mobile) */
+    @media (max-width: 687px) {
+      .side-nav { display: none; }
+      .main-content { margin-left: 0; padding: 16px; }
+      .split-panel { left: 0; height: 100vh; }
+      .split-content { height: calc(100vh - 100px); }
+      .summary-grid { grid-template-columns: 1fr; }
+      .kv-grid { grid-template-columns: 1fr; }
+      .maturity-actions { grid-template-columns: 1fr; }
+      .page-header { flex-direction: column; gap: 12px; }
+      .data-table { display: none; }
+      .card-view { display: block !important; }
+    }
+
+    /* ===== CARD VIEW (mobile) ===== */
+    .card-view { display: none; }
+    .workload-card {
+      background: var(--color-bg-container); border: 1px solid var(--color-border-light);
+      border-radius: var(--radius-sm); padding: 16px; margin-bottom: 12px;
+      cursor: pointer; transition: box-shadow var(--transition-fast);
+    }
+    .workload-card:hover { box-shadow: var(--shadow-md); }
+    .workload-card .wc-name { font-weight: 600; color: var(--color-text-link); font-size: 15px; margin-bottom: 8px; }
+    .workload-card .wc-row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; }
+    .workload-card .wc-label { color: var(--color-text-secondary); }
+
+    /* ===== LOADING SKELETON ===== */
+    .skeleton { background: var(--color-bg-skeleton); border-radius: 4px; animation: skeleton-pulse 1.5s ease-in-out infinite; }
+    @keyframes skeleton-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+  </style>
+</head>
+<body>
+
+<!-- Skip Links -->
+<a href="#filterInput" class="skip-link" id="skipToMain">Skip to main content</a>
+<a href="#workloadTable" class="skip-link" style="left:180px;">Skip to results</a>
+
+<!-- Screen reader live region -->
+<div id="liveRegion" class="sr-only" aria-live="polite" role="status"></div>
+<div id="liveRegionAssertive" class="sr-only" aria-live="assertive" role="alert"></div>
+
+<!-- ===== TOP HEADER (banner) ===== -->
+<header class="top-header" role="banner" aria-label="AI Control Plane header">
+  <div class="logo"><span>&#9729;</span> CloudWatch</div>
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="#">CloudWatch</a><span class="sep">/</span>
+    <a href="#">AI Control Plane</a><span class="sep">/</span>
+    <strong style="color:var(--color-text-inverse)">Overview</strong>
+  </nav>
+  <div class="header-actions">
+    <div class="date-range-picker" id="dateRangePicker" role="group" aria-label="Time range selector">
+      <button class="drp-option" data-range="1h" aria-pressed="false">1h</button>
+      <button class="drp-option" data-range="6h" aria-pressed="false">6h</button>
+      <button class="drp-option" data-range="1d" aria-pressed="false">1d</button>
+      <button class="drp-option active" data-range="7d" aria-pressed="true">7d</button>
+      <button class="drp-option" data-range="30d" aria-pressed="false">30d</button>
+    </div>
+    <span class="time-badge" aria-label="Last updated 2 minutes ago">Last updated: 2 min ago</span>
+    <button class="dark-toggle" id="darkModeToggle" aria-label="Toggle dark mode" title="Toggle dark mode">&#9789; Dark</button>
+  </div>
+</header>
+
+<!-- ===== SIDE NAVIGATION ===== -->
+<nav class="side-nav" role="navigation" aria-label="AI Control Plane navigation">
+  <div class="nav-section-title">AI Control Plane</div>
+  <button class="nav-item active" data-page="overview" aria-current="page"><span class="nav-icon">&#9673;</span><span>Overview</span><span class="nav-badge" aria-label="2 issues">2</span></button>
+  <button class="nav-item" data-page="cost"><span class="nav-icon">$</span><span>Cost Intelligence</span></button>
+  <button class="nav-item" data-page="maturity"><span class="nav-icon">&#8593;</span><span>Maturity Score</span></button>
+  <button class="nav-item" data-page="settings"><span class="nav-icon">&#9881;</span><span>Settings</span></button>
+  <div class="nav-divider" role="separator"></div>
+  <div class="nav-section-title">Related</div>
+  <button class="nav-item"><span class="nav-icon">&#8594;</span><span>Application Signals</span></button>
+  <button class="nav-item"><span class="nav-icon">&#8594;</span><span>Bedrock Guardrails</span></button>
+  <button class="nav-item"><span class="nav-icon">&#8594;</span><span>Cost Explorer</span></button>
+</nav>
+
+<!-- ===== MAIN CONTENT ===== -->
+<main class="main-content" id="mainContent" role="main" aria-label="AI Control Plane">
+
+  <!-- Flashbar (onboarding for new users) -->
+  <div class="flashbar" id="flashbar" role="status">
+    <span class="flash-icon" aria-hidden="true">&#9432;</span>
+    <span><strong>3 new AI workloads detected</strong> since your last visit (May 16). <a href="#" class="flash-link" id="flashViewLink">View new workloads</a></span>
+    <button class="flash-dismiss" id="flashDismiss" aria-label="Dismiss notification">&#10005;</button>
+  </div>
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div>
+      <h1>AI Control Plane</h1>
+      <div class="subtitle">Monitor and govern AI workloads across your organization &middot; 4 accounts</div>
+    </div>
+    <div class="actions">
+      <div class="btn-dropdown" id="actionsDropdown">
+        <button class="btn btn-normal" id="actionsBtn" aria-haspopup="true" aria-expanded="false">Actions &#9662;</button>
+        <div class="dropdown-menu" role="menu" id="actionsMenu">
+          <button class="dropdown-item" role="menuitem" data-action="report">&#128196; Generate Compliance Report</button>
+          <button class="dropdown-item" role="menuitem" data-action="csv">&#128202; Export CSV</button>
+          <button class="dropdown-item" role="menuitem" data-action="schedule">&#9200; Schedule Report</button>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="addWorkloadBtn">+ Add Workload</button>
+    </div>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="summary-grid" role="region" aria-label="Fleet health summary">
+    <div class="summary-card" tabindex="0" aria-label="Total AI Workloads: 14">
+      <div class="card-label">Total AI Workloads</div>
+      <div class="card-value" id="totalWorkloads">14</div>
+      <span class="card-trend trend-up">&#8593; 3 new this week</span>
+      <div class="card-sparkline" id="sparkWorkloads"></div>
+    </div>
+    <div class="summary-card" tabindex="0" aria-label="Guardrail Coverage: 68%">
+      <div class="card-label">Guardrail Coverage</div>
+      <div class="card-value" style="color: var(--color-status-warning);" id="guardrailCoverage">68%</div>
+      <span class="card-trend trend-down">&#8595; Target: 80%</span>
+      <div class="card-subtitle">10 of 14 workloads covered</div>
+    </div>
+    <div class="summary-card" tabindex="0" aria-label="Unhealthy Workloads: 2">
+      <div class="card-label">Unhealthy Workloads</div>
+      <div class="card-value" style="color: var(--color-status-negative);" id="unhealthyCount">2</div>
+      <span class="card-trend trend-down">&#8593; 1 since yesterday</span>
+    </div>
+    <div class="summary-card" tabindex="0" aria-label="Monthly AI Cost: $12,400">
+      <div class="card-label">Monthly AI Cost</div>
+      <div class="card-value" id="totalCost">$12.4K</div>
+      <span class="card-trend trend-neutral">&#8594; +4% vs last month</span>
+      <div class="card-subtitle">Across 4 accounts</div>
+      <div class="card-sparkline" id="sparkCost"></div>
+    </div>
+  </div>
+
+  <!-- Workloads Table -->
+  <div class="container-panel">
+    <div class="container-header">
+      <div style="display:flex;align-items:center;">
+        <h2>AI Workloads</h2>
+        <span class="header-counter" id="tableCounter" aria-label="14 workloads">14</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="btn btn-icon" title="Table preferences" aria-label="Table preferences" id="prefsBtn">&#9776;</button>
+        <button class="btn btn-icon" title="Refresh data" aria-label="Refresh data" id="refreshBtn">&#8635;</button>
+      </div>
+    </div>
+
+    <!-- Property Filter -->
+    <div class="property-filter" role="search" aria-label="Filter AI workloads">
+      <div id="activeFilters" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+      <div class="filter-input-wrap">
+        <input type="text" class="filter-input" id="filterInput"
+               placeholder="Filter by property or value..."
+               aria-label="Filter workloads"
+               aria-autocomplete="list"
+               aria-controls="filterSuggestions"
+               role="combobox"
+               aria-expanded="false" />
+        <div class="filter-suggestions" id="filterSuggestions" role="listbox"></div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div id="tableContainer">
+      <table class="data-table" id="workloadTable" aria-label="AI Workloads table" role="grid">
+        <thead>
+          <tr>
+            <th id="th-name" role="columnheader" aria-sort="none" tabindex="0">Name <span class="sort-icon">&#8597;</span></th>
+            <th id="th-service" role="columnheader" aria-sort="none" tabindex="0">Service <span class="sort-icon">&#8597;</span></th>
+            <th id="th-model" role="columnheader" aria-sort="none" tabindex="0">Model <span class="sort-icon">&#8597;</span></th>
+            <th id="th-account" class="col-account" role="columnheader" aria-sort="none" tabindex="0">Account <span class="sort-icon">&#8597;</span></th>
+            <th id="th-health" role="columnheader" aria-sort="ascending" tabindex="0" class="sorted">Health <span class="sort-icon">&#8597;</span></th>
+            <th id="th-confidence" role="columnheader" aria-sort="none" tabindex="0">Confidence <span class="sort-icon">&#8597;</span></th>
+            <th id="th-guardrail" role="columnheader" aria-sort="none" tabindex="0">Guardrail <span class="sort-icon">&#8597;</span></th>
+            <th id="th-cost" class="col-cost" role="columnheader" aria-sort="none" tabindex="0">Cost (30d) <span class="sort-icon">&#8597;</span></th>
+            <th class="col-trend">Trend</th>
+            <th id="th-lastActive" class="col-last-active" role="columnheader" aria-sort="none" tabindex="0">Last Active <span class="sort-icon">&#8597;</span></th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+      <!-- Empty state -->
+      <div class="filter-empty-results" id="emptyState" style="display:none;">
+        <span class="empty-icon" aria-hidden="true">&#128269;</span>
+        <div class="empty-title">No matching workloads</div>
+        <div class="empty-subtitle">No workloads match your current filter criteria.</div>
+        <button class="filter-clear" id="emptyClearBtn">Clear all filters</button>
+      </div>
+    </div>
+
+    <!-- Mobile card view -->
+    <div class="card-view" id="cardView"></div>
+
+    <!-- Pagination -->
+    <div class="table-footer">
+      <div class="page-info" id="pageInfo">Showing 1-14 of 14 workloads</div>
+      <div class="pagination" id="paginationControls" role="navigation" aria-label="Table pagination">
+        <button disabled aria-label="Previous page">&#8249; Previous</button>
+        <button class="active" aria-label="Page 1" aria-current="page">1</button>
+        <button disabled aria-label="Next page">Next &#8250;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Maturity Section -->
+  <div class="container-panel maturity-section" role="region" aria-label="AI governance maturity">
+    <div class="container-header">
+      <h2>AI Governance Maturity</h2>
+      <span class="guardrail-badge guardrail-partial">Level 2 of 5</span>
+    </div>
+    <div style="padding: 20px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:20px;font-weight:700;color:var(--color-text-primary);">Level 2 &mdash; Managed</div>
+          <div class="maturity-level-label">68% guardrail coverage &middot; Cost tracking active &middot; No automated enforcement</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:12px;color:var(--color-text-secondary);">PROGRESS TO LEVEL 3</div>
+          <div style="font-size:24px;font-weight:700;color:var(--color-text-accent);">42%</div>
+        </div>
+      </div>
+      <div class="maturity-bar-track" role="progressbar" aria-valuenow="42" aria-valuemin="0" aria-valuemax="100" aria-label="Progress to Level 3: 42%">
+        <div class="maturity-bar-fill" style="width: 42%;"></div>
+      </div>
+      <div style="font-weight:600;margin-top:20px;margin-bottom:8px;color:var(--color-text-primary);">Recommended Actions to Reach Level 3</div>
+      <div class="maturity-actions">
+        <div class="maturity-action-card">
+          <div class="mac-title">Enable guardrails on remaining 4 workloads</div>
+          <div class="mac-desc">fraud-detection-v2, text-extract-sagemaker, product-recommender, and sentiment-analysis are unprotected</div>
+          <span class="mac-impact">+28% coverage</span>
+        </div>
+        <div class="maturity-action-card">
+          <div class="mac-title">Set up automated guardrail enforcement</div>
+          <div class="mac-desc">Configure Bedrock to automatically apply content moderation guardrails to new deployments</div>
+          <span class="mac-impact">Required for Level 3</span>
+        </div>
+        <div class="maturity-action-card">
+          <div class="mac-title">Enable cross-account cost alerting</div>
+          <div class="mac-desc">Set cost anomaly thresholds per workload with CloudWatch Alarms</div>
+          <span class="mac-impact">+$2.1K/mo savings est.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ===== COST INTELLIGENCE PAGE ===== -->
+<div class="main-content cost-page" id="costPage" role="main" aria-label="Cost Intelligence">
+  <div class="page-header">
+    <div>
+      <h1>Cost Intelligence</h1>
+      <div class="subtitle">AI spend analysis, model optimization, and cost recommendations</div>
+    </div>
+    <div class="actions">
+      <button class="btn btn-normal" id="costExportBtn">&#128202; Export Report</button>
+    </div>
+  </div>
+
+  <!-- Cost Summary Cards -->
+  <div class="cost-summary-grid" role="region" aria-label="Cost summary">
+    <div class="cost-summary-card">
+      <div class="csc-label">Total AI Spend (30d)</div>
+      <div class="csc-value">$12,400</div>
+      <div class="csc-sub">Across 14 workloads, 4 accounts</div>
+    </div>
+    <div class="cost-summary-card">
+      <div class="csc-label">Spend Trend</div>
+      <div class="csc-value" style="color:var(--color-status-warning);">+4%</div>
+      <div class="csc-sub">vs. last month ($11,920)</div>
+    </div>
+    <div class="cost-summary-card">
+      <div class="csc-label">Optimization Potential</div>
+      <div class="csc-value" style="color:var(--color-status-positive);">$3,800</div>
+      <div class="csc-sub">2 active recommendations</div>
+    </div>
+    <div class="cost-summary-card">
+      <div class="csc-label">Active Recommendations</div>
+      <div class="csc-value">3</div>
+      <div class="csc-sub">1 new this week</div>
+    </div>
+  </div>
+
+  <!-- Cost by Model -->
+  <div class="cost-chart-container" role="region" aria-label="Cost by model">
+    <div class="cost-chart-title">Cost by Model</div>
+    <div id="costByModel"></div>
+  </div>
+
+  <!-- Cost by Team -->
+  <div class="cost-chart-container" role="region" aria-label="Cost by team">
+    <div class="cost-chart-title">Cost by Team</div>
+    <div id="costByTeam"></div>
+  </div>
+
+  <!-- Recommendations Table -->
+  <div class="container-panel" role="region" aria-label="Cost optimization recommendations">
+    <div class="container-header">
+      <h2>Recommendations</h2>
+      <span class="header-counter">3</span>
+    </div>
+    <div style="padding:0;">
+      <table class="cost-reco-table" aria-label="Cost optimization recommendations">
+        <thead>
+          <tr>
+            <th>Workload</th>
+            <th>Current Model</th>
+            <th>Suggested Model</th>
+            <th>Accuracy Delta</th>
+            <th>Monthly Savings</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="font-weight:600;">code-review-assistant</td>
+            <td>Claude 3.5 Sonnet</td>
+            <td>Claude 3 Haiku</td>
+            <td>-15% (85% equiv.)</td>
+            <td style="color:var(--color-status-positive);font-weight:600;">$1,680/mo</td>
+            <td><span class="reco-status reco-status-new">New</span></td>
+          </tr>
+          <tr>
+            <td style="font-weight:600;">customer-support-bot</td>
+            <td>Claude 3.5 Sonnet</td>
+            <td>Claude 3 Haiku</td>
+            <td>-12% (88% equiv.)</td>
+            <td style="color:var(--color-status-positive);font-weight:600;">$2,120/mo</td>
+            <td><span class="reco-status reco-status-new">New</span></td>
+          </tr>
+          <tr>
+            <td style="font-weight:600;">doc-summarizer</td>
+            <td>Claude 3 Haiku</td>
+            <td>Amazon Titan Text Lite</td>
+            <td>-8% (92% equiv.)</td>
+            <td style="color:var(--color-status-positive);font-weight:600;">$480/mo</td>
+            <td><span class="reco-status reco-status-dismissed">Dismissed</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Cost Trend -->
+  <div class="cost-chart-container" style="margin-top:24px;" role="region" aria-label="30-day cost trend">
+    <div class="cost-chart-title">AI Spend &mdash; Last 30 Days</div>
+    <div class="cost-trend-chart" id="costTrendChart"></div>
+    <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--color-text-secondary);margin-top:8px;">
+      <span>Apr 19</span><span>Apr 26</span><span>May 3</span><span>May 10</span><span>May 18</span>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SPLIT PANEL ===== -->
+<aside class="split-panel" id="splitPanel" role="complementary" aria-label="Workload detail panel" aria-hidden="true">
+  <div class="split-header">
+    <div style="display:flex;align-items:center;">
+      <h3 id="splitTitle">&mdash;</h3>
+      <span class="split-subtitle" id="splitSubtitle"></span>
+    </div>
+    <button class="split-close" id="splitCloseBtn" aria-label="Close detail panel">&#10005;</button>
+  </div>
+  <div class="split-tabs" role="tablist" aria-label="Workload detail tabs">
+    <button class="split-tab active" role="tab" data-tab="overview" aria-selected="true" id="tab-btn-overview" aria-controls="tab-overview" tabindex="0">Overview</button>
+    <button class="split-tab" role="tab" data-tab="guardrails" aria-selected="false" id="tab-btn-guardrails" aria-controls="tab-guardrails" tabindex="-1">Guardrails</button>
+    <button class="split-tab" role="tab" data-tab="cost" aria-selected="false" id="tab-btn-cost" aria-controls="tab-cost" tabindex="-1">Cost</button>
+    <button class="split-tab" role="tab" data-tab="timeline" aria-selected="false" id="tab-btn-timeline" aria-controls="tab-timeline" tabindex="-1">Timeline</button>
+  </div>
+  <div class="split-content">
+    <div class="tab-pane active" id="tab-overview" role="tabpanel" aria-labelledby="tab-btn-overview"></div>
+    <div class="tab-pane" id="tab-guardrails" role="tabpanel" aria-labelledby="tab-btn-guardrails"></div>
+    <div class="tab-pane" id="tab-cost" role="tabpanel" aria-labelledby="tab-btn-cost"></div>
+    <div class="tab-pane" id="tab-timeline" role="tabpanel" aria-labelledby="tab-btn-timeline"></div>
+  </div>
+</aside>
+
+<script>
+/* ============================================================
+   MOCK DATA — Separated from rendering logic
+   ============================================================ */
+var WORKLOADS = [
+  { id:1, name:"customer-support-bot", service:"Bedrock", model:"Claude 3.5 Sonnet", account:"prod-main", accountId:"123456789012", health:"healthy", guardrail:"active", guardrailName:"Content Moderation v2", cost:4850, costTrend:[3200,3400,3800,4100,4200,4500,4850], lastActive:"2 min ago", isNew:false, region:"us-east-1", invocations:"1.2M", latencyP50:"120ms", latencyP99:"340ms", errorRate:"0.12%", team:"AI Platform", confidence:"high", hasReco:true, recoModel:"Claude 3 Haiku", recoAccuracy:"88%", recoSavings:2120 },
+  { id:2, name:"fraud-detection-v2", service:"SageMaker", model:"XGBoost Custom", account:"prod-main", accountId:"123456789012", health:"error", guardrail:"none", guardrailName:null, cost:5200, costTrend:[4800,5000,4900,5100,5300,5100,5200], lastActive:"5 min ago", isNew:false, region:"us-east-1", invocations:"3.4M", latencyP50:"8ms", latencyP99:"45ms", errorRate:"2.3%", team:"Risk Engineering", confidence:"unverified", hasReco:false },
+  { id:3, name:"doc-summarizer", service:"Bedrock", model:"Claude 3 Haiku", account:"prod-main", accountId:"123456789012", health:"healthy", guardrail:"active", guardrailName:"PII Filter + Moderation", cost:1200, costTrend:[800,900,1000,950,1100,1150,1200], lastActive:"1 hr ago", isNew:false, region:"us-east-1", invocations:"450K", latencyP50:"85ms", latencyP99:"210ms", errorRate:"0.05%", team:"Internal Tools", confidence:"high", hasReco:false },
+  { id:4, name:"image-classifier-prod", service:"SageMaker", model:"ResNet-50 Fine-tuned", account:"ml-workloads", accountId:"234567890123", health:"healthy", guardrail:"active", guardrailName:"Input Validation", cost:3100, costTrend:[2800,2900,3000,3050,3100,3000,3100], lastActive:"30 min ago", isNew:false, region:"us-west-2", invocations:"890K", latencyP50:"35ms", latencyP99:"120ms", errorRate:"0.08%", team:"Computer Vision", confidence:"medium", hasReco:false },
+  { id:5, name:"code-review-assistant", service:"Bedrock", model:"Claude 3.5 Sonnet", account:"dev-sandbox", accountId:"345678901234", health:"warning", guardrail:"active", guardrailName:"Content Moderation v1", cost:2800, costTrend:[1800,2000,2200,2400,2500,2600,2800], lastActive:"15 min ago", isNew:false, region:"us-east-1", invocations:"280K", latencyP50:"450ms", latencyP99:"1.8s", errorRate:"0.4%", team:"Developer Experience", confidence:"high", hasReco:true, recoModel:"Claude 3 Haiku", recoAccuracy:"85%", recoSavings:1680 },
+  { id:6, name:"product-recommender", service:"Bedrock", model:"Amazon Titan Embeddings", account:"prod-main", accountId:"123456789012", health:"healthy", guardrail:"none", guardrailName:null, cost:1800, costTrend:[1500,1600,1650,1700,1750,1780,1800], lastActive:"3 min ago", isNew:false, region:"us-east-1", invocations:"2.1M", latencyP50:"15ms", latencyP99:"52ms", errorRate:"0.02%", team:"Marketplace", confidence:"high", hasReco:false },
+  { id:7, name:"log-anomaly-detector", service:"SageMaker", model:"Random Cut Forest", account:"observability", accountId:"456789012345", health:"healthy", guardrail:"active", guardrailName:"Output Validation", cost:920, costTrend:[800,820,850,880,900,910,920], lastActive:"1 min ago", isNew:false, region:"us-east-1", invocations:"5.6M", latencyP50:"3ms", latencyP99:"12ms", errorRate:"0.01%", team:"SRE", confidence:"unverified", hasReco:false },
+  { id:8, name:"chat-moderation-filter", service:"Bedrock", model:"Claude 3 Haiku", account:"prod-main", accountId:"123456789012", health:"healthy", guardrail:"active", guardrailName:"Strict Content + PII", cost:650, costTrend:[500,520,550,580,600,630,650], lastActive:"8 min ago", isNew:false, region:"us-east-1", invocations:"780K", latencyP50:"42ms", latencyP99:"95ms", errorRate:"0.03%", team:"Trust & Safety", confidence:"high", hasReco:false },
+  { id:9, name:"text-extract-sagemaker", service:"SageMaker", model:"LayoutLM v3", account:"ml-workloads", accountId:"234567890123", health:"warning", guardrail:"none", guardrailName:null, cost:1450, costTrend:[1100,1200,1250,1300,1350,1400,1450], lastActive:"45 min ago", isNew:false, region:"us-west-2", invocations:"320K", latencyP50:"220ms", latencyP99:"890ms", errorRate:"1.1%", team:"Document Processing", confidence:"medium", hasReco:false },
+  { id:10, name:"forecast-demand-model", service:"SageMaker", model:"DeepAR+", account:"prod-main", accountId:"123456789012", health:"healthy", guardrail:"active", guardrailName:"Input Range Validation", cost:2100, costTrend:[1900,1950,2000,2050,2080,2090,2100], lastActive:"2 hrs ago", isNew:false, region:"us-east-1", invocations:"45K", latencyP50:"1.2s", latencyP99:"3.4s", errorRate:"0.15%", team:"Supply Chain", confidence:"unverified", hasReco:false },
+  { id:11, name:"sentiment-analysis", service:"Bedrock", model:"Amazon Titan Text", account:"prod-main", accountId:"123456789012", health:"error", guardrail:"none", guardrailName:null, cost:380, costTrend:[200,220,250,280,310,350,380], lastActive:"20 min ago", isNew:true, region:"us-east-1", invocations:"120K", latencyP50:"28ms", latencyP99:"72ms", errorRate:"3.1%", team:"Customer Insights", confidence:"high", hasReco:false },
+  { id:12, name:"bedrock-knowledge-base", service:"Bedrock", model:"Claude 3 Sonnet + Titan Embed", account:"dev-sandbox", accountId:"345678901234", health:"healthy", guardrail:"active", guardrailName:"RAG Content Filter", cost:1650, costTrend:[1200,1300,1350,1400,1500,1580,1650], lastActive:"10 min ago", isNew:true, region:"us-east-1", invocations:"95K", latencyP50:"380ms", latencyP99:"1.1s", errorRate:"0.2%", team:"Knowledge Management", confidence:"high", hasReco:false },
+  { id:13, name:"invoice-processing-ml", service:"SageMaker", model:"Custom BERT Fine-tune", account:"ml-workloads", accountId:"234567890123", health:"healthy", guardrail:"active", guardrailName:"PII Detection", cost:780, costTrend:[600,650,680,700,720,750,780], lastActive:"1 hr ago", isNew:true, region:"us-west-2", invocations:"68K", latencyP50:"180ms", latencyP99:"520ms", errorRate:"0.09%", team:"Finance Automation", confidence:"medium", hasReco:false },
+  { id:14, name:"real-time-translation", service:"Bedrock", model:"Amazon Titan Text", account:"prod-main", accountId:"123456789012", health:"healthy", guardrail:"active", guardrailName:"Content Moderation v2", cost:510, costTrend:[400,420,440,460,480,490,510], lastActive:"5 min ago", isNew:false, region:"us-east-1", invocations:"210K", latencyP50:"65ms", latencyP99:"180ms", errorRate:"0.04%", team:"Localization", confidence:"high", hasReco:false }
+];
+
+var FILTER_OPTIONS = [
+  { prop: "service", val: "Bedrock", display: "Service = Bedrock" },
+  { prop: "service", val: "SageMaker", display: "Service = SageMaker" },
+  { prop: "health", val: "healthy", display: "Health = Healthy" },
+  { prop: "health", val: "warning", display: "Health = Warning" },
+  { prop: "health", val: "error", display: "Health = Error" },
+  { prop: "guardrail", val: "active", display: "Guardrail = Active" },
+  { prop: "guardrail", val: "none", display: "Guardrail = None" },
+  { prop: "account", val: "prod-main", display: "Account = prod-main" },
+  { prop: "account", val: "ml-workloads", display: "Account = ml-workloads" },
+  { prop: "account", val: "dev-sandbox", display: "Account = dev-sandbox" },
+  { prop: "account", val: "observability", display: "Account = observability" }
+];
+
+var SUMMARY_SPARKLINE_WORKLOADS = [8,9,9,10,11,12,14];
+var SUMMARY_SPARKLINE_COST = [9800,10200,10800,11200,11600,12000,12400];
+
+/* ============================================================
+   APPLICATION STATE
+   ============================================================ */
+var state = {
+  currentSort: { col: "health", dir: "asc" },
+  activeFilters: [],
+  selectedWorkload: null,
+  splitPanelOpen: false,
+  activeTab: "overview",
+  triggerRowId: null
+};
+
+/* ============================================================
+   HELPER FUNCTIONS
+   ============================================================ */
+function announce(message, assertive) {
+  var region = document.getElementById(assertive ? "liveRegionAssertive" : "liveRegion");
+  region.textContent = "";
+  setTimeout(function() { region.textContent = message; }, 50);
+}
+
+function getStatusIcon(health) {
+  var icons = {
+    healthy: "&#10003;",
+    warning: "&#9888;",
+    error: "&#10060;",
+    unknown: "?"
+  };
+  return icons[health] || icons.unknown;
+}
+
+function getStatusLabel(health) {
+  return health.charAt(0).toUpperCase() + health.slice(1);
+}
+
+function getConfidenceBadge(confidence) {
+  if (confidence === "high") return '<span class="confidence-badge confidence-high">&#10003; Verified</span>';
+  if (confidence === "medium") return '<span class="confidence-badge confidence-medium">&#9679; Medium</span>';
+  return '<span class="confidence-badge confidence-unverified">&#9888; Unverified</span>';
+}
+
+function formatCost(cost) {
+  if (cost >= 1000) return "$" + (cost / 1000).toFixed(1) + "K";
+  return "$" + cost;
+}
+
+function renderSparklineHTML(values, color) {
+  color = color || "var(--color-chart-primary)";
+  var max = Math.max.apply(null, values);
+  return '<span class="inline-sparkline" aria-hidden="true">' +
+    values.map(function(v) {
+      var h = Math.max(4, (v / max) * 24);
+      return '<span class="spark-bar" style="height:' + h + 'px;width:8px;background:' + color + ';"></span>';
+    }).join("") + '</span>';
+}
+
+function renderCardSparkline(containerId, values) {
+  var el = document.getElementById(containerId);
+  if (!el) return;
+  var max = Math.max.apply(null, values);
+  el.innerHTML = values.map(function(v) {
+    var h = Math.max(4, (v / max) * 28);
+    return '<span class="spark-bar" style="height:' + h + 'px;"></span>';
+  }).join("");
+}
+
+/* ============================================================
+   FILTER LOGIC
+   ============================================================ */
+function getFilteredData() {
+  var data = WORKLOADS.slice();
+  state.activeFilters.forEach(function(f) {
+    data = data.filter(function(w) {
+      if (f.prop === "service") return w.service.toLowerCase() === f.val.toLowerCase();
+      if (f.prop === "health") return w.health === f.val.toLowerCase();
+      if (f.prop === "guardrail") return w.guardrail === f.val.toLowerCase();
+      if (f.prop === "account") return w.account.toLowerCase().includes(f.val.toLowerCase());
+      return true;
+    });
+  });
+  return data;
+}
+
+function sortData(data) {
+  var col = state.currentSort.col;
+  var dir = state.currentSort.dir;
+  var mult = dir === "asc" ? 1 : -1;
+  var healthOrder = { error: 0, warning: 1, healthy: 2, unknown: 3 };
+  return data.sort(function(a, b) {
+    var va, vb;
+    var confidenceOrder = { unverified: 0, medium: 1, high: 2 };
+    if (col === "health") { va = healthOrder[a.health]; vb = healthOrder[b.health]; }
+    else if (col === "confidence") { va = confidenceOrder[a.confidence]; vb = confidenceOrder[b.confidence]; }
+    else if (col === "cost") { va = a.cost; vb = b.cost; }
+    else if (col === "name") { va = a.name; vb = b.name; }
+    else if (col === "service") { va = a.service; vb = b.service; }
+    else if (col === "model") { va = a.model; vb = b.model; }
+    else if (col === "account") { va = a.account; vb = b.account; }
+    else if (col === "guardrail") { va = a.guardrail; vb = b.guardrail; }
+    else if (col === "lastActive") { va = a.lastActive; vb = b.lastActive; }
+    else { va = a.name; vb = b.name; }
+    if (typeof va === "string") return va.localeCompare(vb) * mult;
+    return (va - vb) * mult;
+  });
+}
+
+/* ============================================================
+   RENDER TABLE
+   ============================================================ */
+function renderTable() {
+  var data = sortData(getFilteredData());
+  var tbody = document.getElementById("tableBody");
+  var counter = document.getElementById("tableCounter");
+  var pageInfo = document.getElementById("pageInfo");
+  var emptyState = document.getElementById("emptyState");
+  var tableEl = document.getElementById("workloadTable");
+
+  counter.textContent = data.length;
+  pageInfo.textContent = "Showing 1-" + data.length + " of " + data.length + " workloads";
+
+  // Update sort header indicators
+  var ths = document.querySelectorAll(".data-table thead th");
+  ths.forEach(function(th) {
+    th.classList.remove("sorted");
+    th.setAttribute("aria-sort", "none");
+  });
+  var sortedTh = document.getElementById("th-" + state.currentSort.col);
+  if (sortedTh) {
+    sortedTh.classList.add("sorted");
+    sortedTh.setAttribute("aria-sort", state.currentSort.dir === "asc" ? "ascending" : "descending");
+  }
+
+  if (data.length === 0) {
+    emptyState.style.display = "block";
+    tableEl.style.display = "none";
+    return;
+  }
+  emptyState.style.display = "none";
+  tableEl.style.display = "table";
+
+  tbody.innerHTML = data.map(function(w) {
+    var selected = state.selectedWorkload && state.selectedWorkload.id === w.id ? "selected" : "";
+    var newBadge = w.isNew ? ' <span style="background:var(--color-status-info-bg);color:var(--color-text-accent);font-size:11px;padding:1px 6px;border-radius:3px;font-weight:600;">NEW</span>' : "";
+    var costStr = formatCost(w.cost);
+    return '<tr class="' + selected + '" tabindex="0" role="row" data-id="' + w.id + '" aria-label="' + w.name + ', ' + getStatusLabel(w.health) + '">' +
+      '<td><span class="cell-name">' + w.name + '</span>' + newBadge + '</td>' +
+      '<td>' + w.service + '</td>' +
+      '<td class="cell-secondary">' + w.model + '</td>' +
+      '<td class="cell-secondary col-account">' + w.account + '</td>' +
+      '<td><span class="status status-' + w.health + '"><span class="status-icon" aria-hidden="true">' + getStatusIcon(w.health) + '</span>' + getStatusLabel(w.health) + '</span></td>' +
+      '<td>' + getConfidenceBadge(w.confidence) + '</td>' +
+      '<td><span class="guardrail-badge guardrail-' + w.guardrail + '">' + (w.guardrail === "active" ? "&#10003; Active" : w.guardrail === "partial" ? "&#9684; Partial" : "&#10007; None") + '</span></td>' +
+      '<td class="cell-mono col-cost">' + costStr + '</td>' +
+      '<td class="col-trend">' + renderSparklineHTML(w.costTrend) + '</td>' +
+      '<td class="cell-secondary col-last-active">' + w.lastActive + '</td>' +
+    '</tr>';
+  }).join("");
+
+  // Render mobile card view
+  renderCardView(data);
+
+  // Attach row event listeners
+  var rows = tbody.querySelectorAll("tr");
+  rows.forEach(function(row) {
+    row.addEventListener("click", function() {
+      var id = parseInt(this.getAttribute("data-id"));
+      openSplitPanel(id);
+    });
+    row.addEventListener("keydown", function(e) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        var id = parseInt(this.getAttribute("data-id"));
+        openSplitPanel(id);
+      }
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        var next = this.nextElementSibling;
+        if (next) next.focus();
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        var prev = this.previousElementSibling;
+        if (prev) prev.focus();
+      }
+    });
+  });
+}
+
+function renderCardView(data) {
+  var cardView = document.getElementById("cardView");
+  cardView.innerHTML = data.map(function(w) {
+    return '<div class="workload-card" data-id="' + w.id + '" tabindex="0">' +
+      '<div class="wc-name">' + w.name + (w.isNew ? ' <span style="background:var(--color-status-info-bg);color:var(--color-text-accent);font-size:11px;padding:1px 6px;border-radius:3px;font-weight:600;">NEW</span>' : '') + '</div>' +
+      '<div class="wc-row"><span class="wc-label">Service</span><span>' + w.service + '</span></div>' +
+      '<div class="wc-row"><span class="wc-label">Model</span><span>' + w.model + '</span></div>' +
+      '<div class="wc-row"><span class="wc-label">Health</span><span class="status status-' + w.health + '"><span class="status-icon" aria-hidden="true">' + getStatusIcon(w.health) + '</span>' + getStatusLabel(w.health) + '</span></div>' +
+      '<div class="wc-row"><span class="wc-label">Cost (30d)</span><span>' + formatCost(w.cost) + '</span></div>' +
+    '</div>';
+  }).join("");
+
+  var cards = cardView.querySelectorAll(".workload-card");
+  cards.forEach(function(card) {
+    card.addEventListener("click", function() {
+      openSplitPanel(parseInt(this.getAttribute("data-id")));
+    });
+  });
+}
+
+/* ============================================================
+   SPLIT PANEL
+   ============================================================ */
+function openSplitPanel(id) {
+  var w = WORKLOADS.find(function(x) { return x.id === id; });
+  if (!w) return;
+  state.selectedWorkload = w;
+  state.splitPanelOpen = true;
+  state.triggerRowId = id;
+  renderTable();
+
+  document.getElementById("splitTitle").textContent = w.name;
+  document.getElementById("splitSubtitle").textContent = w.service + " · " + w.model + " · " + w.region;
+
+  renderOverviewTab(w);
+  renderGuardrailsTab(w);
+  renderCostTab(w);
+  renderTimelineTab(w);
+
+  var panel = document.getElementById("splitPanel");
+  panel.classList.add("open");
+  panel.setAttribute("aria-hidden", "false");
+  document.getElementById("mainContent").classList.add("split-open");
+
+  switchTab("overview");
+  announce(w.name + " detail panel open");
+
+  setTimeout(function() {
+    document.getElementById("splitCloseBtn").focus();
+  }, 210);
+}
+
+function closeSplitPanel() {
+  var panel = document.getElementById("splitPanel");
+  panel.classList.remove("open");
+  panel.setAttribute("aria-hidden", "true");
+  document.getElementById("mainContent").classList.remove("split-open");
+
+  var triggerId = state.triggerRowId;
+  state.selectedWorkload = null;
+  state.splitPanelOpen = false;
+  state.triggerRowId = null;
+  renderTable();
+
+  // Return focus to triggering row
+  if (triggerId) {
+    var row = document.querySelector('tr[data-id="' + triggerId + '"]');
+    if (row) row.focus();
+  }
+  announce("Detail panel closed");
+}
+
+function switchTab(tabName) {
+  state.activeTab = tabName;
+  var tabs = document.querySelectorAll(".split-tab");
+  var panes = document.querySelectorAll(".tab-pane");
+
+  tabs.forEach(function(t) {
+    var isActive = t.getAttribute("data-tab") === tabName;
+    t.classList.toggle("active", isActive);
+    t.setAttribute("aria-selected", isActive ? "true" : "false");
+    t.setAttribute("tabindex", isActive ? "0" : "-1");
+  });
+
+  panes.forEach(function(p) {
+    var isActive = p.id === "tab-" + tabName;
+    p.classList.toggle("active", isActive);
+  });
+
+  announce(tabName.charAt(0).toUpperCase() + tabName.slice(1) + " tab selected");
+}
+
+function renderOverviewTab(w) {
+  var alertHTML = "";
+  if (w.health === "error") {
+    alertHTML = '<div class="inline-alert alert-error"><span class="alert-icon" aria-hidden="true">&#9888;</span><div class="alert-text"><div class="alert-title">Error Rate Elevated</div>Error rate ' + w.errorRate + ' exceeds threshold (1%). Check recent deployments and model endpoint health.</div></div>';
+  } else if (w.health === "warning") {
+    alertHTML = '<div class="inline-alert alert-warning"><span class="alert-icon" aria-hidden="true">&#9888;</span><div class="alert-text"><div class="alert-title">Latency Regression Detected</div>P99 latency ' + w.latencyP99 + ' is above the 500ms threshold. Consider scaling the endpoint.</div></div>';
+  }
+
+  var chartBars = w.costTrend.map(function() {
+    var h = 20 + Math.random() * 60;
+    return '<div class="mini-bar" style="height:' + h + 'px;flex:1;"></div>';
+  }).join("");
+
+  document.getElementById("tab-overview").innerHTML =
+    '<div class="kv-grid">' +
+      '<div class="kv-item"><div class="kv-label">Service</div><div class="kv-value">' + w.service + '</div></div>' +
+      '<div class="kv-item"><div class="kv-label">Model</div><div class="kv-value">' + w.model + '</div></div>' +
+      '<div class="kv-item"><div class="kv-label">Account</div><div class="kv-value">' + w.account + ' (' + w.accountId + ')</div></div>' +
+      '<div class="kv-item"><div class="kv-label">Region</div><div class="kv-value">' + w.region + '</div></div>' +
+      '<div class="kv-item"><div class="kv-label">Team</div><div class="kv-value">' + w.team + '</div></div>' +
+      '<div class="kv-item"><div class="kv-label">Health</div><div class="kv-value"><span class="status status-' + w.health + '"><span class="status-icon" aria-hidden="true">' + getStatusIcon(w.health) + '</span>' + getStatusLabel(w.health) + '</span></div></div>' +
+      '<div class="kv-item"><div class="kv-label">Invocations (30d)</div><div class="kv-value">' + w.invocations + '</div></div>' +
+      '<div class="kv-item"><div class="kv-label">Latency P50 / P99</div><div class="kv-value">' + w.latencyP50 + ' / ' + w.latencyP99 + '</div></div>' +
+      '<div class="kv-item"><div class="kv-label">Error Rate</div><div class="kv-value" style="color:' + (parseFloat(w.errorRate) > 1 ? "var(--color-status-negative)" : "inherit") + '">' + w.errorRate + '</div></div>' +
+    '</div>' + alertHTML +
+    '<div class="chart-area"><div class="chart-title">Invocation Count &mdash; Last 7 Days</div><div class="mini-chart">' + chartBars + '</div></div>';
+}
+
+function renderGuardrailsTab(w) {
+  if (w.guardrail === "none") {
+    document.getElementById("tab-guardrails").innerHTML =
+      '<div class="inline-alert alert-warning"><span class="alert-icon" aria-hidden="true">&#9888;</span><div class="alert-text"><div class="alert-title">No guardrail configured</div>This workload has no content moderation or safety guardrails applied. <a href="#" style="color:var(--color-text-link);font-weight:600;">Enable Guardrail &rarr;</a></div></div>';
+  } else {
+    var rows = '<tr><td style="font-weight:600;">' + w.guardrailName + '</td><td>Content Moderation</td><td><span class="status status-healthy"><span class="status-icon" aria-hidden="true">&#10003;</span>Active</span></td><td>' + (Math.floor(Math.random() * 48) + 1) + 'h ago</td></tr>';
+    if (w.guardrailName && w.guardrailName.indexOf("PII") !== -1) {
+      rows += '<tr><td style="font-weight:600;">PII Detection</td><td>Data Protection</td><td><span class="status status-healthy"><span class="status-icon" aria-hidden="true">&#10003;</span>Active</span></td><td>' + (Math.floor(Math.random() * 24) + 1) + 'h ago</td></tr>';
+    }
+    var blocked = Math.floor(Math.random() * 50) + 5;
+    document.getElementById("tab-guardrails").innerHTML =
+      '<table class="nested-table" aria-label="Applied guardrails"><thead><tr><th>Guardrail</th><th>Type</th><th>Status</th><th>Last Triggered</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+      '<div class="inline-alert alert-info" style="margin-top:16px;"><span class="alert-icon" aria-hidden="true">&#9432;</span><div class="alert-text">Guardrail enforcement is active. ' + blocked + ' events blocked in the last 7 days.</div></div>';
+  }
+}
+
+function renderCostTab(w) {
+  var dailyCosts = w.costTrend;
+  var maxCost = Math.max.apply(null, dailyCosts);
+  var bars = dailyCosts.map(function(v) {
+    return '<div class="mini-bar" style="height:' + Math.max(8, (v / maxCost) * 80) + 'px;flex:1;background:var(--color-chart-primary);"></div>';
+  }).join("");
+
+  // v3: Cost recommendation Alert
+  var recoHTML = "";
+  if (w.hasReco) {
+    recoHTML = '<div class="cost-reco-alert" id="costRecoAlert-' + w.id + '">' +
+      '<span class="cra-icon" aria-hidden="true">&#9432;</span>' +
+      '<div class="cra-body">' +
+        '<div class="cra-title">Cost Optimization Available</div>' +
+        '<div class="cra-desc">This workload uses ' + w.model + ' for classification. Similar workloads show ' + w.recoAccuracy + ' equivalent accuracy on ' + w.recoModel + ' at 60% lower cost. Estimated savings: $' + w.recoSavings.toLocaleString() + '/month.</div>' +
+        '<div class="cra-actions">' +
+          '<button class="cra-btn cra-btn-primary" onclick="navigateToCostPage()">Show Details</button>' +
+          '<button class="cra-btn cra-btn-secondary" onclick="dismissCostReco(' + w.id + ')">Dismiss</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  document.getElementById("tab-cost").innerHTML = recoHTML +
+    '<div class="kv-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px;">' +
+      '<div class="kv-item"><div class="kv-label">30-Day Cost</div><div class="kv-value">$' + w.cost.toLocaleString() + '</div></div>' +
+      '<div class="kv-item"><div class="kv-label">Per Invocation</div><div class="kv-value">$' + (w.cost / parseInvocations(w.invocations)).toFixed(4) + '</div></div>' +
+      '<div class="kv-item"><div class="kv-label">Trend</div><div class="kv-value" style="color:var(--color-status-warning);">&#8593; ' + (Math.floor(Math.random() * 20) + 5) + '%</div></div>' +
+      '<div class="kv-item"><div class="kv-label">Optimization</div><div class="kv-value" style="color:var(--color-status-positive);">' + (w.hasReco ? "Switch model" : w.cost > 2000 ? "Batch eligible" : "Optimal") + '</div></div>' +
+    '</div>' +
+    '<div class="chart-area"><div class="chart-title">Daily Cost &mdash; Last 7 Days</div><div class="mini-chart">' + bars + '</div>' +
+    '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--color-text-secondary);margin-top:4px;"><span>May 12</span><span>May 13</span><span>May 14</span><span>May 15</span><span>May 16</span><span>May 17</span><span>May 18</span></div></div>';
+}
+
+function dismissCostReco(id) {
+  var el = document.getElementById("costRecoAlert-" + id);
+  if (el) { el.style.display = "none"; }
+  announce("Recommendation dismissed");
+}
+
+function navigateToCostPage() {
+  closeSplitPanel();
+  switchPage("cost");
+}
+
+function parseInvocations(str) {
+  var num = parseFloat(str);
+  if (str.indexOf("M") !== -1) return num * 1000000;
+  if (str.indexOf("K") !== -1) return num * 1000;
+  return num;
+}
+
+function renderTimelineTab(w) {
+  var events = [
+    { time: "May 18, 14:32 UTC", event: "<strong>InvokeModel</strong> called by role/" + w.team.replace(/\s/g, "-").toLowerCase() + "-prod" },
+    { time: "May 18, 09:15 UTC", event: "<strong>UpdateEndpoint</strong> &mdash; instance count scaled from 2 to 3" },
+    { time: "May 17, 22:01 UTC", event: "<strong>GuardrailBlocked</strong> &mdash; content moderation triggered (toxic content)" },
+    { time: "May 17, 16:44 UTC", event: "<strong>CreateModelVersion</strong> &mdash; new model artifact deployed" },
+    { time: "May 16, 11:20 UTC", event: "<strong>TagResource</strong> &mdash; added tag team=" + w.team }
+  ];
+  document.getElementById("tab-timeline").innerHTML = events.map(function(e) {
+    return '<div class="timeline-item"><div class="tl-time">' + e.time + '</div><div class="timeline-dot"></div><div class="tl-event">' + e.event + '</div></div>';
+  }).join("");
+}
+
+/* ============================================================
+   PROPERTY FILTER UI
+   ============================================================ */
+function showSuggestions() {
+  var el = document.getElementById("filterSuggestions");
+  renderSuggestions("");
+  el.style.display = "block";
+  document.getElementById("filterInput").setAttribute("aria-expanded", "true");
+}
+
+function hideSuggestions() {
+  document.getElementById("filterSuggestions").style.display = "none";
+  document.getElementById("filterInput").setAttribute("aria-expanded", "false");
+}
+
+function renderSuggestions(q) {
+  var el = document.getElementById("filterSuggestions");
+  var opts = FILTER_OPTIONS.filter(function(o) {
+    return !state.activeFilters.some(function(f) { return f.prop === o.prop && f.val === o.val; });
+  });
+  var filtered = q ? opts.filter(function(o) { return o.display.toLowerCase().indexOf(q) !== -1; }) : opts;
+  el.innerHTML = filtered.map(function(o, i) {
+    return '<div class="filter-suggestion" role="option" data-prop="' + o.prop + '" data-val="' + o.val + '" data-display="' + o.display + '" id="suggestion-' + i + '">' + o.display + '</div>';
+  }).join("");
+
+  // Attach click listeners
+  el.querySelectorAll(".filter-suggestion").forEach(function(s) {
+    s.addEventListener("mousedown", function(e) {
+      e.preventDefault();
+      addFilter(this.getAttribute("data-prop"), this.getAttribute("data-val"), this.getAttribute("data-display"));
+    });
+  });
+}
+
+function addFilter(prop, val, display) {
+  state.activeFilters.push({ prop: prop, val: val, display: display });
+  document.getElementById("filterInput").value = "";
+  hideSuggestions();
+  renderFilters();
+  renderTable();
+  var count = getFilteredData().length;
+  announce(count + " workloads match your filter");
+}
+
+function removeFilter(idx) {
+  state.activeFilters.splice(idx, 1);
+  renderFilters();
+  renderTable();
+  if (state.activeFilters.length === 0) {
+    announce("All filters cleared. " + WORKLOADS.length + " workloads shown.");
+  } else {
+    announce(getFilteredData().length + " workloads match your filter");
+  }
+}
+
+function clearAllFilters() {
+  state.activeFilters = [];
+  renderFilters();
+  renderTable();
+  announce("All filters cleared. " + WORKLOADS.length + " workloads shown.");
+}
+
+function renderFilters() {
+  var container = document.getElementById("activeFilters");
+  container.innerHTML = state.activeFilters.map(function(f, i) {
+    return '<span class="filter-token">' + f.display + ' <button class="remove-token" data-idx="' + i + '" aria-label="Remove filter ' + f.display + '">&#10005;</button></span>';
+  }).join("") + (state.activeFilters.length > 0 ? '<button class="filter-clear" id="clearAllBtn">Clear all</button>' : '');
+
+  // Attach remove listeners
+  container.querySelectorAll(".remove-token").forEach(function(btn) {
+    btn.addEventListener("click", function(e) {
+      e.stopPropagation();
+      removeFilter(parseInt(this.getAttribute("data-idx")));
+    });
+  });
+
+  var clearBtn = document.getElementById("clearAllBtn");
+  if (clearBtn) {
+    clearBtn.addEventListener("click", clearAllFilters);
+  }
+}
+
+/* ============================================================
+   SORT HANDLER
+   ============================================================ */
+function handleSort(col) {
+  if (state.currentSort.col === col) {
+    state.currentSort.dir = state.currentSort.dir === "asc" ? "desc" : "asc";
+  } else {
+    state.currentSort = { col: col, dir: "asc" };
+  }
+  renderTable();
+  announce("Table sorted by " + col + ", " + (state.currentSort.dir === "asc" ? "ascending" : "descending"));
+}
+
+/* ============================================================
+   PAGE SWITCHING (Overview / Cost Intelligence / Maturity)
+   ============================================================ */
+function switchPage(page) {
+  var mainContent = document.getElementById("mainContent");
+  var costPage = document.getElementById("costPage");
+
+  // Hide all pages
+  mainContent.style.display = "none";
+  costPage.style.display = "none";
+
+  // Show target
+  if (page === "cost") {
+    costPage.style.display = "block";
+    renderCostIntelligencePage();
+    announce("Cost Intelligence page");
+  } else {
+    mainContent.style.display = "block";
+    announce("Overview page");
+  }
+
+  // Update side nav
+  document.querySelectorAll(".nav-item[data-page]").forEach(function(n) {
+    n.classList.remove("active");
+    n.removeAttribute("aria-current");
+  });
+  var activeNav = document.querySelector('.nav-item[data-page="' + page + '"]');
+  if (activeNav) {
+    activeNav.classList.add("active");
+    activeNav.setAttribute("aria-current", "page");
+  }
+
+  // Update breadcrumb
+  var breadcrumbLabel = page === "cost" ? "Cost Intelligence" : "Overview";
+  document.querySelector(".breadcrumb strong").textContent = breadcrumbLabel;
+}
+
+function renderCostIntelligencePage() {
+  // Cost by Model - horizontal bar chart
+  var modelCosts = {};
+  WORKLOADS.forEach(function(w) {
+    if (!modelCosts[w.model]) modelCosts[w.model] = 0;
+    modelCosts[w.model] += w.cost;
+  });
+  var modelEntries = Object.keys(modelCosts).map(function(m) { return { name: m, cost: modelCosts[m] }; });
+  modelEntries.sort(function(a, b) { return b.cost - a.cost; });
+  var maxModelCost = modelEntries[0] ? modelEntries[0].cost : 1;
+
+  var modelTiers = {
+    "Claude 3.5 Sonnet": "premium", "Claude 3 Sonnet + Titan Embed": "premium",
+    "Claude 3 Haiku": "standard", "Amazon Titan Text": "standard", "Amazon Titan Embeddings": "standard",
+    "XGBoost Custom": "economy", "ResNet-50 Fine-tuned": "economy", "Random Cut Forest": "economy",
+    "LayoutLM v3": "economy", "DeepAR+": "economy", "Custom BERT Fine-tune": "economy"
+  };
+
+  document.getElementById("costByModel").innerHTML = modelEntries.map(function(e) {
+    var tier = modelTiers[e.name] || "standard";
+    var pct = (e.cost / maxModelCost) * 100;
+    return '<div class="hbar-row">' +
+      '<div class="hbar-label" title="' + e.name + '">' + e.name + '</div>' +
+      '<div class="hbar-track"><div class="hbar-fill tier-' + tier + '" style="width:' + pct + '%"></div></div>' +
+      '<div class="hbar-value">$' + e.cost.toLocaleString() + '</div>' +
+    '</div>';
+  }).join("") +
+  '<div style="display:flex;gap:16px;margin-top:12px;font-size:11px;color:var(--color-text-secondary);">' +
+    '<span><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:var(--color-chart-primary);vertical-align:middle;margin-right:4px;"></span>Premium</span>' +
+    '<span><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:var(--color-chart-secondary);vertical-align:middle;margin-right:4px;"></span>Standard</span>' +
+    '<span><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:var(--color-chart-tertiary);vertical-align:middle;margin-right:4px;"></span>Economy</span>' +
+  '</div>';
+
+  // Cost by Team - horizontal bar chart
+  var teamCosts = {};
+  WORKLOADS.forEach(function(w) {
+    if (!teamCosts[w.team]) teamCosts[w.team] = 0;
+    teamCosts[w.team] += w.cost;
+  });
+  var teamEntries = Object.keys(teamCosts).map(function(t) { return { name: t, cost: teamCosts[t] }; });
+  teamEntries.sort(function(a, b) { return b.cost - a.cost; });
+  var maxTeamCost = teamEntries[0] ? teamEntries[0].cost : 1;
+
+  document.getElementById("costByTeam").innerHTML = teamEntries.map(function(e) {
+    var pct = (e.cost / maxTeamCost) * 100;
+    return '<div class="hbar-row">' +
+      '<div class="hbar-label">' + e.name + '</div>' +
+      '<div class="hbar-track"><div class="hbar-fill tier-premium" style="width:' + pct + '%"></div></div>' +
+      '<div class="hbar-value">$' + e.cost.toLocaleString() + '</div>' +
+    '</div>';
+  }).join("");
+
+  // 30-day cost trend
+  var trendData = [];
+  for (var i = 0; i < 30; i++) {
+    trendData.push(9000 + Math.floor(Math.random() * 2000) + (i * 120));
+  }
+  var maxTrend = Math.max.apply(null, trendData);
+  document.getElementById("costTrendChart").innerHTML = trendData.map(function(v) {
+    var h = Math.max(4, (v / maxTrend) * 110);
+    return '<div class="cost-trend-bar" style="height:' + h + 'px;background:var(--color-chart-primary);opacity:0.8;" title="$' + v.toLocaleString() + '"></div>';
+  }).join("");
+}
+
+/* ============================================================
+   EVENT LISTENERS (addEventListener, no inline handlers)
+   ============================================================ */
+document.addEventListener("DOMContentLoaded", function() {
+
+  // Summary card sparklines
+  renderCardSparkline("sparkWorkloads", SUMMARY_SPARKLINE_WORKLOADS);
+  renderCardSparkline("sparkCost", SUMMARY_SPARKLINE_COST);
+
+  // Initial render
+  renderTable();
+  announce("AI Control Plane. 14 AI workloads across 4 accounts.");
+
+  // Sort column headers
+  document.querySelectorAll(".data-table thead th[id]").forEach(function(th) {
+    var col = th.id.replace("th-", "");
+    th.addEventListener("click", function() { handleSort(col); });
+    th.addEventListener("keydown", function(e) {
+      if (e.key === "Enter") { e.preventDefault(); handleSort(col); }
+    });
+  });
+
+  // Filter input
+  var filterInput = document.getElementById("filterInput");
+  filterInput.addEventListener("focus", showSuggestions);
+  filterInput.addEventListener("input", function() {
+    renderSuggestions(this.value.toLowerCase());
+    document.getElementById("filterSuggestions").style.display = "block";
+  });
+  filterInput.addEventListener("blur", function() {
+    setTimeout(hideSuggestions, 200);
+  });
+  filterInput.addEventListener("keydown", function(e) {
+    if (e.key === "Escape") { hideSuggestions(); this.blur(); }
+  });
+
+  // Split panel close button
+  document.getElementById("splitCloseBtn").addEventListener("click", closeSplitPanel);
+
+  // Split panel tab switching
+  document.querySelectorAll(".split-tab").forEach(function(tab) {
+    tab.addEventListener("click", function() {
+      switchTab(this.getAttribute("data-tab"));
+    });
+    tab.addEventListener("keydown", function(e) {
+      var tabs = Array.from(document.querySelectorAll(".split-tab"));
+      var idx = tabs.indexOf(this);
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        var next = tabs[(idx + 1) % tabs.length];
+        next.focus();
+        switchTab(next.getAttribute("data-tab"));
+      }
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        var prev = tabs[(idx - 1 + tabs.length) % tabs.length];
+        prev.focus();
+        switchTab(prev.getAttribute("data-tab"));
+      }
+    });
+  });
+
+  // Dark mode toggle
+  document.getElementById("darkModeToggle").addEventListener("click", function() {
+    document.body.classList.toggle("dark-mode");
+    var isDark = document.body.classList.contains("dark-mode");
+    this.innerHTML = isDark ? "&#9788; Light" : "&#9789; Dark";
+    this.setAttribute("aria-label", isDark ? "Switch to light mode" : "Switch to dark mode");
+  });
+
+  // Date range picker
+  document.querySelectorAll(".drp-option").forEach(function(btn) {
+    btn.addEventListener("click", function() {
+      document.querySelectorAll(".drp-option").forEach(function(b) {
+        b.classList.remove("active");
+        b.setAttribute("aria-pressed", "false");
+      });
+      this.classList.add("active");
+      this.setAttribute("aria-pressed", "true");
+      announce("Time range changed to " + this.textContent);
+    });
+  });
+
+  // Actions dropdown
+  document.getElementById("actionsBtn").addEventListener("click", function(e) {
+    e.stopPropagation();
+    var dd = document.getElementById("actionsDropdown");
+    var isOpen = dd.classList.toggle("open");
+    this.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    if (isOpen) {
+      document.getElementById("actionsMenu").querySelector(".dropdown-item").focus();
+    }
+  });
+
+  document.querySelectorAll("#actionsMenu .dropdown-item").forEach(function(item) {
+    item.addEventListener("click", function() {
+      var action = this.getAttribute("data-action");
+      document.getElementById("actionsDropdown").classList.remove("open");
+      document.getElementById("actionsBtn").setAttribute("aria-expanded", "false");
+      if (action === "report") announce("Generating compliance report");
+      else if (action === "csv") announce("Exporting CSV");
+      else if (action === "schedule") announce("Opening schedule dialog");
+    });
+    item.addEventListener("keydown", function(e) {
+      if (e.key === "Escape") {
+        document.getElementById("actionsDropdown").classList.remove("open");
+        document.getElementById("actionsBtn").focus();
+      }
+    });
+  });
+
+  // Close dropdown on outside click
+  document.addEventListener("click", function(e) {
+    if (!e.target.closest(".btn-dropdown")) {
+      document.querySelectorAll(".btn-dropdown").forEach(function(d) { d.classList.remove("open"); });
+      var actionsBtn = document.getElementById("actionsBtn");
+      if (actionsBtn) actionsBtn.setAttribute("aria-expanded", "false");
+    }
+  });
+
+  // Side nav - page switching
+  document.querySelectorAll(".nav-item[data-page]").forEach(function(item) {
+    item.addEventListener("click", function() {
+      var page = this.getAttribute("data-page");
+      switchPage(page);
+    });
+  });
+
+  // Flashbar dismiss
+  document.getElementById("flashDismiss").addEventListener("click", function() {
+    var fb = document.getElementById("flashbar");
+    fb.classList.add("dismissing");
+    setTimeout(function() { fb.style.display = "none"; }, 200);
+  });
+
+  // Flashbar view link
+  document.getElementById("flashViewLink").addEventListener("click", function(e) {
+    e.preventDefault();
+    document.getElementById("flashbar").classList.add("dismissing");
+    setTimeout(function() { document.getElementById("flashbar").style.display = "none"; }, 200);
+  });
+
+  // Empty state clear button
+  document.getElementById("emptyClearBtn").addEventListener("click", clearAllFilters);
+
+  // Add workload button
+  document.getElementById("addWorkloadBtn").addEventListener("click", function() {
+    announce("Opening setup wizard");
+  });
+
+  // Refresh button
+  document.getElementById("refreshBtn").addEventListener("click", function() {
+    announce("Refreshing data");
+    renderTable();
+  });
+
+  // Preferences button
+  document.getElementById("prefsBtn").addEventListener("click", function() {
+    announce("Opening column preferences");
+  });
+
+  /* ========== GLOBAL KEYBOARD SHORTCUTS ========== */
+  document.addEventListener("keydown", function(e) {
+    var target = e.target;
+    var isInput = target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable;
+
+    // Escape closes split panel or flashbar
+    if (e.key === "Escape") {
+      if (state.splitPanelOpen) {
+        e.preventDefault();
+        closeSplitPanel();
+        return;
+      }
+      var fb = document.getElementById("flashbar");
+      if (fb && fb.style.display !== "none") {
+        fb.classList.add("dismissing");
+        setTimeout(function() { fb.style.display = "none"; }, 200);
+      }
+    }
+
+    // "/" focuses filter (when no input focused)
+    if (e.key === "/" && !isInput) {
+      e.preventDefault();
+      document.getElementById("filterInput").focus();
+    }
+
+    // "r" refreshes (when no input focused)
+    if (e.key === "r" && !isInput && !e.ctrlKey && !e.metaKey) {
+      e.preventDefault();
+      announce("Refreshing data");
+      renderTable();
+    }
+
+    // "?" toggles help (when no input focused)
+    if (e.key === "?" && !isInput) {
+      e.preventDefault();
+      announce("Keyboard shortcuts: slash to filter, Escape to close panel, arrow keys to navigate table rows, Enter to open details, r to refresh");
+    }
+  });
+});
+</script>
+</body>
+</html>

@@ -4,20 +4,48 @@ description: >
   HTML Prototype Builder agent. Use when the user asks to "build prototype",
   "create HTML demo", "build the mockup", "prototype this", or when the pm-pipeline
   orchestrator invokes Stage 5. Builds single-file Cloudscape HTML prototypes from
-  approved design specs.
-version: 0.2.0
+  approved design specs. Operates in two modes — Vision Mode (maximalist, demoable,
+  includes Proto v1 placeholders) and Spec Mode (production-faithful, Eng v1 only).
+  Default is Vision Mode. Use Spec Mode only when user explicitly requests it or
+  when the pipeline orchestrator specifies --spec-only.
+version: 0.3.0
 ---
 
 # Prototype Builder
 
 Build single-file HTML prototypes using the Cloudscape Design System. Every prototype must render correctly, pass accessibility checks, meet performance budgets, and survive edge-case data before delivery.
 
+## Two Modes: Vision vs Spec
+
+### Vision Mode (DEFAULT)
+Build a **maximalist, demoable prototype** that covers the full Proto v1 scope from the PRD's dual-scope boundary table. This means:
+- **All Eng v1 features** are fully implemented with interactive mock data
+- **All Proto v1 features** (not in Eng v1) are included as navigable pages with realistic placeholder content:
+  - Placeholder pages have a sidebar nav entry, page header, and realistic empty/coming-soon state
+  - Placeholder pages show WHAT the page will do when built (value prop, sample data layout, mockup of the eventual UX)
+  - Placeholder pages are NOT blank or just "Coming Soon" — they show enough to tell the story during a demo
+- **Navigation structure matches the Designer's Product Navigation Map** — every section in the map gets a sidebar entry
+- **Demo narrative is walkable** — the PM can follow the Designer's 5-Minute Demo Script end-to-end in the prototype
+
+Vision Mode produces a prototype that feels like a **product**, not a feature. This is the prototype the PM takes into the eng alignment meeting (Stage 6.5).
+
+### Spec Mode (explicit request only)
+Build a **spec-faithful prototype** that implements ONLY what's in the Eng v1 design spec. No placeholder pages, no beyond-scope features. Use this when:
+- The user explicitly says "spec mode", "spec-only", or "engineering prototype"
+- The pipeline orchestrator passes `--spec-only`
+- A second prototype is needed specifically for engineering handoff
+
+Spec Mode is the v0.2.0 behavior — unchanged.
+
+**Default is Vision Mode.** If no mode is specified, build Vision.
+
 ## Input Contract
 
 | Input | Source | Required | Validation |
 |-------|--------|:--------:|------------|
-| Design spec (`design-spec-v[N].md`) | Design stage output | Yes | Must contain Cloudscape Component Mapping table and layout wireframe |
-| PRD executive summary | PRD stage output | Yes | Must include End-to-End Experience section |
+| Design spec (`design-spec-v[N].md`) | Design stage output | Yes | Must contain Cloudscape Component Mapping table, layout wireframe, Product Navigation Map, and 5-Min Demo Script |
+| PRD dual-scope boundary table | PRD stage output | Yes | Must include both Eng v1 and Proto v1 columns |
+| Research interaction patterns | Research stage output | Yes (Vision Mode) | Interaction Pattern Benchmarking table for navigation surface validation |
 | Existing prototype versions | Prior runs | No | If present, diff against new design spec for delta |
 | Mock data schema | Design spec or explicit | No | If absent, derive from design spec entities |
 
@@ -32,8 +60,19 @@ Build single-file HTML prototypes using the Cloudscape Design System. Every prot
 
 ## Build Process
 
+### Step 0: Mode Selection & Navigation Surface (NEW — v0.3.0)
+
+1. **Determine mode:** Vision (default) or Spec (explicit request only).
+2. **If Vision Mode:**
+   - Read the Designer's Product Navigation Map. List every page/section.
+   - Read the PRD's dual-scope boundary table. Identify all Proto v1 items.
+   - Read the Researcher's Interaction Pattern Benchmarking. Note competitor page counts.
+   - **Navigation surface check:** Count your planned pages. If < 50% of primary competitor's page count, add more placeholder pages until you reach parity.
+   - For each Proto v1 item NOT in Eng v1: plan the placeholder page content (what it shows, sample data layout, value prop text, "coming soon" elements).
+3. **If Spec Mode:** Skip this step. Proceed with design spec only.
+
 ### Step 1: Component Inventory
-Read the design spec's Cloudscape Component Mapping table. List every component needed. Cross-reference with the layout wireframe to confirm placement.
+Read the design spec's Cloudscape Component Mapping table. List every component needed. Cross-reference with the layout wireframe to confirm placement. In Vision Mode, also inventory components needed for placeholder pages (sidebar nav entries, page headers, placeholder content layouts).
 
 ### Step 2: Data Model
 Define the mock data structure:
@@ -94,6 +133,18 @@ Test every interactive element end-to-end:
 - [ ] Verify all text is readable in dark mode
 - [ ] Verify no hardcoded colors — use only Cloudscape CSS custom properties
 - [ ] Verify charts/graphs (if any) use Cloudscape color tokens
+
+### Step 8.5: Vision Mode Validation (NEW — v0.3.0, Vision Mode only)
+
+If building in Vision Mode, validate the maximalist prototype:
+- [ ] **Navigation completeness:** Every page in the Designer's Product Navigation Map has a sidebar nav entry
+- [ ] **Placeholder pages exist:** Every Proto v1 item not in Eng v1 has a navigable page with content (not blank)
+- [ ] **Placeholder quality:** Each placeholder page shows what the feature will do, has realistic sample layout, and includes a value prop statement
+- [ ] **Demo walkability:** Follow the Designer's 5-Minute Demo Script step-by-step in the prototype. Every click, every page transition, every talking point must be achievable.
+- [ ] **Product narrative:** Navigate all pages in order. Does the sidebar tell a coherent product story? Would a first-time user understand this is a complete product?
+- [ ] **Page count check:** Compare prototype page count against Researcher's competitor benchmarks. Log the comparison.
+
+**If the demo script cannot be followed:** This is a build failure. Identify which pages/interactions are missing and add them before proceeding.
 
 ### Step 9: Fidelity Report (Feedback Edge)
 After build and validation, emit `fidelity-report-v[N].md`:
@@ -228,12 +279,15 @@ status: draft | validated | approved
 - NEVER hardcode data into rendering logic. Always separate mock data from presentation.
 - ALWAYS use realistic data. Not "Item 1", "Service A", or placeholder text.
 - ALWAYS validate before delivering. Open it, click everything, check the console.
-- ALWAYS run all 10 steps. Do not skip edge-case, accessibility, or fidelity steps.
+- ALWAYS run all steps (including Step 0 and Step 8.5 in Vision Mode). Do not skip edge-case, accessibility, or fidelity steps.
 - ALWAYS emit the Fidelity Report. It is a required output, not optional.
 - ALWAYS update the PRD End-to-End Experience section after prototype is validated.
 - If something doesn't work, report the failure. Don't fake success.
 - Use only Cloudscape CSS custom properties for colors — never hardcode hex/rgb values.
 - Pin CDN versions exactly. Never search for or substitute latest.
+- **Vision Mode is the DEFAULT.** Build maximalist unless explicitly told otherwise. A prototype that feels like a feature instead of a product is a failure mode.
+- **Placeholder pages are real pages.** They have sidebar nav entries, page headers, realistic sample layouts, and value prop text. "Coming soon" with no context is not acceptable.
+- **The demo script is a test case.** If the PM can't walk through the Designer's 5-Minute Demo Script in the prototype, the build is incomplete.
 
 ## Eval Learnings Log
 
@@ -247,3 +301,4 @@ status: draft | validated | approved
 | 2026-05-19 | Animations undefined, inconsistent UX | No transition spec | Added Animation & Transition Spec table |
 | 2026-05-19 | Interactions validated by structure only | No behavioral testing step | Added Step 6: click-through interaction testing |
 | 2026-05-19 | No file size or render-time guardrails | Missing performance budget | Added Performance Budget table with 4 metrics |
+| 2026-05-20 | Pipeline produced 2-page prototype vs competitor's 10-page product | Prototype skill only builds to Eng v1 spec — treats prototype as verification, not vision | Added Vision Mode (default): builds maximalist prototype covering full Proto v1 scope including placeholder pages. Added Step 0 (navigation surface planning) and Step 8.5 (demo walkability validation). Spec Mode preserved as opt-in for engineering handoff. |

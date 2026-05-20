@@ -6,7 +6,7 @@ description: >
   the pm-pipeline orchestrator invokes Stage 3. Asks predefined critique questions,
   requires evidence-backed answers, uses hybrid scoring. Pipeline never blocks — flags
   unanswered questions for human review.
-version: 0.2.0
+version: 0.3.0
 ---
 
 # Gandalf — Strategy & Problem Gate
@@ -19,9 +19,9 @@ Adapted from the adversarial-dev Evaluator pattern (coleam00/adversarial-dev): r
 - Latest PRD version (`prd-v[N].md`)
 - Research artifact (`research-v[N].md`) for cross-referencing claims
 
-## The 11 Critique Questions
+## The 12 Critique Questions
 
-Ask ALL 11 questions in Round 1. Each targets a specific dimension of strategy/problem quality.
+Ask ALL 12 questions in Round 1. Each targets a specific dimension of strategy/problem quality.
 
 | # | Dimension | Question |
 |---|-----------|----------|
@@ -36,6 +36,7 @@ Ask ALL 11 questions in Round 1. Each targets a specific dimension of strategy/p
 | 9 | **Failure Mode** | What's the most likely way this fails? Not "customers don't adopt" — a specific, falsifiable failure scenario. |
 | 10 | **Pricing & Business Model** | How does this affect pricing? Is there a clear path from this feature to revenue? |
 | 11 | **Solution Direction Deliberation** | Did the PRD Writer consider alternative solution directions from the Researcher's opportunity tree, or did they default to the first/obvious option? Show the Solution Lineage table and explain why rejected alternatives were inferior to the chosen direction. |
+| 12 | **Product Completeness** | If you built only what's in the Eng v1 scope, would the resulting product feel complete to a first-time user navigating the UI? Or would it feel like a feature inside a product that doesn't exist yet? Compare the Proto v1 scope against the Researcher's Interaction Pattern Benchmarking — does the prototype cover enough navigation sections, workflow patterns, and integration patterns to match category expectations? A product with 2 pages competing against products with 10 pages will feel incomplete regardless of how good those 2 pages are. |
 
 ## Scoring Methodology — Hybrid
 
@@ -58,7 +59,7 @@ Each question is scored on two axes:
 A question **passes** if: Rubric Score >= 3 AND Evidence Score = 1
 
 ### Stage Pass/Fail
-The stage **passes** if: >= 9 out of 11 questions pass
+The stage **passes** if: >= 10 out of 12 questions pass
 
 ## Round Protocol
 
@@ -93,14 +94,14 @@ prd-version: v[N]
 timestamp: [ISO 8601]
 status: passed | passed-with-flags | failed-moved-forward
 rounds-used: [1-3]
-pass-count: [X]/11
+pass-count: [X]/12
 ---
 
 # Gandalf Evaluation: [Feature Name]
 
 ## Verdict: [PASSED / PASSED WITH FLAGS / MOVED FORWARD WITH FLAGS]
 
-**Score: [X]/11 questions passed | Rounds used: [N]/3**
+**Score: [X]/12 questions passed | Rounds used: [N]/3**
 
 ## Detailed Scores
 
@@ -140,8 +141,12 @@ pass-count: [X]/11
 - Be tough but constructive. Every failing score must come with specific, actionable feedback.
 - Critique the STRATEGY and PROBLEM, not the writing style or format
 - Q11 evaluates the PRD Writer's USE of the opportunity tree, not the tree's quality. The tree is a Researcher artifact — Gandalf does not co-author research. Focus on whether the PRD Writer demonstrated deliberate selection among alternatives.
+- Q12 evaluates product completeness by comparing Proto v1 scope against competitor interaction patterns. A prototype that covers 20% of the navigation surface competitors offer will fail this question regardless of the quality of what it does cover. The fix is expanding Proto v1 scope (placeholder pages, coming-soon states), NOT expanding Eng v1 scope.
 
 ## Eval Learnings Log
 
 ### v0.1.0 → v0.2.0 (2026-05-19, opportunity-tree change spec)
 1. No check on solution direction deliberation — PRD Writer could default to the obvious option without documenting why alternatives were rejected. Added Q11: Solution Direction Deliberation to evaluate PRD Writer's use of the Researcher's Opportunity-Solution Tree.
+
+### v0.2.0 → v0.3.0 (2026-05-20, prototype gap analysis)
+2. No check on product completeness — pipeline produced a 2-page prototype while competitors had 10-page products. Added Q12: Product Completeness to evaluate whether Proto v1 scope covers enough navigation surface to feel like a product, not a feature. Compares against Researcher's Interaction Pattern Benchmarking. Updated question count from 11 to 12, pass threshold from 9/11 to 10/12.

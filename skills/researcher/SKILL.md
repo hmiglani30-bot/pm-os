@@ -6,7 +6,7 @@ description: >
   "what are competitors doing", or when the pm-pipeline orchestrator invokes Stage 1.
   Produces structured research with quantitative data, competitor evolution timelines,
   and market context.
-version: 0.4.0
+version: 0.5.0
 ---
 
 # Researcher Agent
@@ -130,6 +130,52 @@ If you genuinely cannot find direct customer voice after searching at least 5 so
 Search for: "[product A] to [product B] migration", "why we switched from [competitor]", "[competitor] alternative", "[competitor] churn"
 
 If you can't find switching stories, that itself is a finding — note it and explain why (new category, no established players to switch from, etc.).
+
+### Step 7.5: Interaction Pattern Benchmarking (NEW — v0.5.0)
+
+**This step captures HOW competitors build their UX, not just WHAT they build.** The gap analysis (Step 2) and competitor deep-dives (Steps 3-4) focus on capabilities. This step focuses on interaction patterns — the design vocabulary that makes a product feel complete.
+
+For each competitor analyzed in Steps 3-4, document:
+
+**Navigation & Information Architecture:**
+- How many top-level pages/sections does the product have?
+- What's the sidebar/nav structure?
+- Is there a "command center" or hub page that ties everything together?
+- How deep is the navigation hierarchy?
+
+**Workflow Patterns:**
+- Are there guided workflows (wizards, steppers)?
+- What multi-step processes exist? (e.g., "decision workflow: Ask → Assemble → Inspect → Act → Reuse")
+- How are complex actions structured? (modals, drawers, inline expansion?)
+
+**Data Management Patterns:**
+- Do they support bulk actions? What kind?
+- How do they show detail? (split panel, drawer, full-page drill-down?)
+- Is there card view + table view toggling?
+- How do they handle filtering and search?
+
+**Integration & Extensibility Patterns:**
+- Is there a connector marketplace or integration hub?
+- What does third-party setup look like?
+- How many integrations does the primary competitor ship with?
+
+**Product Narrative Patterns:**
+- What does a 5-minute demo walkthrough look like?
+- How do pages connect — is there a natural flow, or are they isolated features?
+- Is there an audit trail or activity log?
+- Is there a case/ticket management system embedded?
+
+**Output table (mandatory):**
+
+| Pattern Category | Competitor | Pattern Detail | Implication for Us |
+|-----------------|-----------|---------------|-------------------|
+| Navigation | ServiceNow | 10-section sidebar, command center hub | Our prototype needs comparable page count to feel like a product |
+| Workflow | ServiceNow | 5-step decision wizard with stepper | Guided workflows are table-stakes, not v2 |
+| Data Management | Datadog | Split panel + bulk actions + card/table toggle | Dense data management patterns expected by enterprise users |
+| Integration | ServiceNow | 30+ connector marketplace | Even if v1 has 0 connectors, the prototype should show the integration page |
+| [continue for all patterns found] | | | |
+
+**Why this matters:** The pipeline's previous failure mode was producing a prototype that felt like a feature (table + detail panel) instead of a product (10-page navigation with workflows, integrations, and an audit trail). Interaction patterns from competitors set the minimum bar for what "product-complete" looks like in this category.
 
 ### Step 8: Pattern Synthesis
 Across all competitors, identify:
@@ -264,6 +310,10 @@ tier-1-2-percentage: [% of citations from Tier 1-2]
 ## Why Customers Switch
 [Real migration stories with trigger events]
 
+## Interaction Pattern Benchmarking
+| Pattern Category | Competitor | Pattern Detail | Implication for Us |
+[... all patterns from Step 7.5]
+
 ## Pattern Analysis
 ### Common Patterns
 ### Differentiators
@@ -311,6 +361,7 @@ tier-1-2-percentage: [% of citations from Tier 1-2]
 | Quantitative Data + TAM | 500-800 words | Numbers with math shown |
 | Customer Voice | 400-600 words | 3+ direct quotes + interpretation |
 | Why Customers Switch | 200-400 words | Migration signals |
+| Interaction Pattern Benchmarking | 500-800 words | Competitor UX vocabulary for Designer |
 | Pattern Analysis | 300-500 words | Synthesis, not repetition |
 | Opportunity-Solution Tree | 600-900 words | Divergent options for PRD Writer |
 | What to Monitor | 200-300 words | Continuous intelligence |
@@ -328,6 +379,8 @@ tier-1-2-percentage: [% of citations from Tier 1-2]
 - [ ] At least 3 direct customer voice quotes from forums/reviews
 - [ ] "Why Customers Switch" section with real migration stories (or documented absence)
 - [ ] Research methodology section documents queries, sources, and data gaps
+- [ ] Interaction Pattern Benchmarking table exists with patterns across 4+ categories
+- [ ] Interaction patterns include navigation page count, workflow types, data management, and integration patterns
 - [ ] Opportunity tree has 3-5 opportunities, each with 2+ directions, none marked as recommended
 - [ ] Every opportunity in the tree cites specific findings from Steps 2-8
 - [ ] "What to Monitor" section for continuous intelligence
@@ -355,3 +408,6 @@ tier-1-2-percentage: [% of citations from Tier 1-2]
 
 ### v0.3.0 → v0.4.0 (2026-05-19, opportunity-tree change spec)
 14. Pattern analysis gaps were a flat list — PRD Writer had no structured menu of alternatives. Added Step 8.5: Opportunity-Solution Tree to restructure gaps into divergent opportunities with 2-3 solution directions each, evidence traceability, and explicit no-recommendation constraint.
+
+### v0.4.0 → v0.5.0 (2026-05-20, prototype gap analysis)
+15. Research analyzed competitor capabilities but not their interaction patterns — pipeline produced a 2-page prototype while competitor had 10 pages. Added Step 7.5: Interaction Pattern Benchmarking to capture navigation structures, workflow patterns, data management patterns, and integration patterns. This gives the Designer and Prototype Builder a minimum bar for product surface area.

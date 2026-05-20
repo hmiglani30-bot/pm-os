@@ -5,7 +5,7 @@ description: >
   "create product requirements", "draft product spec", or when the pm-pipeline orchestrator
   invokes Stage 2. Produces a customer-first PRD with persona, JTBD, problem depth,
   solution proposal, and 25 MECE FAQs.
-version: 0.3.0
+version: 0.4.0
 ---
 
 # Strategy & PRD Writer
@@ -102,12 +102,20 @@ Also include:
 For each row: the "From Opportunity" and "Direction Chosen" columns must reference specific named opportunities and directions from the tree. The "Alternatives Rejected" column lists the other directions from that opportunity that were NOT selected. The "Rejection Rationale" must be specific (not "out of scope" but "requires Bedrock API dependency that adds 3 months to timeline"). If a capability does not trace to any tree direction, explain why — it may be a novel addition, but that must be justified.
 
 - Key differentiator vs. competitors (reference specific research findings with citation)
-- **Scope boundary table:**
+- **Scope boundary table (dual-scope — NEW in v0.4.0):**
 
-| Capability | v1 | v2 | v3 | Rationale for phasing |
-|-----------|:---:|:---:|:---:|----------------------|
+| Capability | Eng v1 | Proto v1 | v2 | v3 | Rationale |
+|-----------|:------:|:--------:|:---:|:---:|-----------|
 
-- For each "out of scope" item: why it was cut (not just "v2") — what tradeoff was made
+  **Eng v1** = what gets built to production quality.
+  **Proto v1** = what gets included in the vision prototype, even as lightweight placeholders or "coming soon" states.
+
+  The prototype scope is always >= engineering scope. Features scoped for v2/v3 engineering may still appear in the v1 prototype as placeholder pages, empty states with value props, or simplified workflows — because the prototype must tell a complete product story, not just demonstrate v1 features.
+
+  **Rule:** If the Researcher's Interaction Pattern Benchmarking (Step 7.5) shows that competitors have N navigation sections and the Eng v1 scope only covers N/3, the remaining sections should appear in Proto v1 as lightweight placeholders. The prototype is a vision artifact, not an engineering artifact.
+
+- For each "out of scope for Eng v1" item: why it was cut (not just "v2") — what tradeoff was made
+- For each "in Proto v1 but not Eng v1" item: what the prototype should show (placeholder page, coming-soon banner, simplified mock) and why it matters for the product narrative
 
 ### Section 3: Success Metrics
 
@@ -196,8 +204,8 @@ sources-count: [number]
 |---------------------|-----------------|-----------------|----------------------|---------------------|
 [...]
 
-### Scope Boundary
-| Capability | v1 | v2 | v3 | Rationale |
+### Scope Boundary (Dual-Scope)
+| Capability | Eng v1 | Proto v1 | v2 | v3 | Rationale |
 [...]
 
 ### Competitive Differentiation
@@ -278,7 +286,8 @@ Never bluff. If you don't know, say "This requires further research" and flag it
 - [ ] Solution section describes WHAT and WHY for each capability (not just names/bullets)
 - [ ] Solution section does NOT describe the UI/experience (that's the Designer's job)
 - [ ] Solution Lineage table exists — every capability traces to a tree opportunity/direction with rejected alternatives named
-- [ ] Scope boundary table exists with phasing rationale
+- [ ] Dual-scope boundary table exists (Eng v1 + Proto v1 columns) with phasing rationale
+- [ ] Proto v1 scope includes placeholder pages for any v2/v3 features that competitors already ship
 - [ ] Success metrics include North Star with rejected alternatives, anti-metrics, and phase gates
 - [ ] All 25 FAQs are present and MECE across 8 categories
 - [ ] FAQ questions are skeptical (would a VP ask this?), not softball
@@ -307,3 +316,6 @@ Never bluff. If you don't know, say "This requires further research" and flag it
 
 ### v0.2.0 → v0.3.0 (2026-05-19, opportunity-tree change spec)
 13. No solution lineage — PRD Writer jumped from research gaps to solution proposal without documenting which alternative directions were considered and rejected. Added mandatory Solution Lineage table to Section 2 and updated input contract to require Opportunity-Solution Tree from Researcher.
+
+### v0.3.0 → v0.4.0 (2026-05-20, prototype gap analysis)
+14. Single-scope boundary table (v1/v2/v3) caused pipeline to produce a minimalist prototype. PRD scoped connectors and governance workflows as "v2" and the prototype excluded them entirely — resulting in 2 pages vs competitor's 10. Added dual-scope columns: "Eng v1" (production build) and "Proto v1" (vision prototype). Proto v1 >= Eng v1. Features scoped for v2 engineering can still appear in Proto v1 as placeholder pages so the prototype tells a complete product story.

@@ -7,8 +7,9 @@ description: >
   evaluates WHY layouts work, considers alternatives. Applies consumer or enterprise
   design patterns based on context. Includes Nielsen heuristic audit, interaction states,
   keyboard nav, accessibility depth, data viz guidance, micro-interactions, responsive
-  breakpoint specs, anti-pattern validation, wayfinding, and first-time UX.
-version: 0.2.0
+  breakpoint specs, anti-pattern validation, wayfinding, first-time UX, and 5-minute
+  demo narrative script.
+version: 0.3.0
 ---
 
 # UX/Experience Designer
@@ -25,12 +26,16 @@ Every invocation of this stage MUST receive these inputs. If any are missing, ha
 |-------|--------|----------------|
 | Approved PRD (`prd-v[N].md`) | Stage 2: PRD Writer | Executive Summary, Target Personas, JTBD, Solution Proposal, Success Metrics, End-to-End Experience section |
 | Gandalf evaluation (`gandalf-evaluation-v[N].md`) | Stage 3: Gandalf | Overall score, section scores, critical gaps flagged, open questions |
-| Research artifact (`research-v[N].md`) | Stage 1: Researcher | Competitive landscape, user research findings, market context |
+| Research artifact (`research-v[N].md`) | Stage 1: Researcher | Competitive landscape, user research findings, market context, **Interaction Pattern Benchmarking table** |
+| Current state audit (`current-state-v[N].md`) | Stage 0.5: Auditor | Competitor UX Pattern Inventory, Prototype Surface Requirements |
 
 **Extraction rules:**
 - Pull primary persona and JTBD ranking directly from the PRD — do not re-derive them.
 - Pull Gandalf-flagged UX gaps and treat each as a mandatory design constraint.
 - Pull competitive screenshots/patterns from Research to inform the Reality Check phase.
+- **Pull Interaction Pattern Benchmarking table from Research** — this defines the minimum navigation surface, workflow patterns, and integration patterns the design must include.
+- **Pull Prototype Surface Requirements from Current State Audit** — this defines minimum page count and demo narrative requirements.
+- **Pull Proto v1 scope from PRD's dual-scope boundary table** — the design must cover ALL Proto v1 items, not just Eng v1 items. Proto v1 items not in Eng v1 get designed as placeholder pages, coming-soon states, or simplified mocks.
 
 ---
 
@@ -58,6 +63,8 @@ The design spec MUST contain every section listed below. Omitting a section is a
 | Cloudscape Component Mapping | Every UI element mapped to a Cloudscape component |
 | Stickiness Design | Habit loops, return triggers explicitly defined |
 | Error & Edge States | Empty, error, loading, partial, timeout states designed |
+| **5-Minute Demo Script** (NEW v0.3.0) | Narrative walkthrough script with exact pages, clicks, and talking points. Must cover Proto v1 scope. |
+| **Product Navigation Map** (NEW v0.3.0) | Full page/section inventory matching or exceeding competitor surface from Interaction Pattern Benchmarking |
 | Handoff Notes | Specific prototype builder guidance |
 
 **Feedback edge:** After completing the design spec, write back a `design-feedback` block to the PRD's "End-to-End Experience" section listing: (a) assumptions made where the PRD was ambiguous, (b) UX constraints that may require PRD scope changes, (c) interaction patterns that imply new requirements not in the PRD.
@@ -525,6 +532,37 @@ skill-version: 0.2.0
 **Empty State Design:** [per-page specs]
 **Dismissal Rules:** [spec]
 
+## Product Navigation Map (NEW — v0.3.0)
+
+Define the full page/section inventory. This map must cover ALL Proto v1 scope items, including placeholder pages for v2/v3 features.
+
+| # | Page/Section | Nav Label | Proto v1 State | Eng v1 State | Competitor Precedent |
+|---|-------------|-----------|---------------|-------------|---------------------|
+| 1 | Command Center | Home | Full | Full | ServiceNow: Dashboard hub |
+| 2 | AI Inventory | Inventory | Full | Full | ServiceNow: Discovery |
+| 3 | Governance | Governance | Full | Full | ServiceNow: Govern |
+| 4 | Connectors | Connectors | Placeholder (coming soon) | Not in v1 | ServiceNow: 30+ integrations |
+| [continue for all sections] | | | | | |
+
+**Completeness check:** Count the navigation sections. Compare against the Researcher's Interaction Pattern Benchmarking table. If competitors average N sections and your design has < N/2, the product will feel incomplete. Add placeholder pages until you reach competitive parity for the prototype.
+
+## 5-Minute Demo Script (NEW — v0.3.0, MANDATORY)
+
+Write the exact walkthrough a PM would give to demo this product in 5 minutes. This is a forcing function — if the script feels flat ("open the table, filter, look at detail"), the product surface is too narrow.
+
+| Step | Time | Page | Action | What to Say | Why It Matters |
+|------|------|------|--------|-------------|----------------|
+| 1 | 0:00 | Command Center | Land on dashboard | "This is your AI operations hub — everything starts here" | Sets context, shows the product has a home |
+| 2 | 0:30 | Command Center | Point to KPIs | "At a glance: 247 AI workloads, $180K/mo spend, 72% governed" | Demonstrates data density, immediate value |
+| 3 | 1:00 | Inventory | Click nav → Inventory | "Let's drill into what AI you actually have deployed" | Shows discovery capability |
+| 4 | 1:30 | Inventory | Click a workload row | "Click any workload for full detail — cost, guardrails, timeline" | Shows data depth per entity |
+| [continue through all key pages] | | | | | |
+| N | 4:30 | The Ask | Return to Command Center | "That's the full loop — discover, govern, optimize, decide, act" | Ties narrative together |
+
+**Script quality test:** Read the "What to Say" column top-to-bottom. If it tells a coherent product story (discover → understand → govern → optimize → act), the design has enough surface area. If it reads like a feature list ("here's a table, here's a filter, here's a panel"), expand the navigation map.
+
+**Rule:** The demo script MUST touch at least 4 different pages/sections. A demo that stays on one page is demoing a feature, not a product.
+
 ## Stickiness Design
 [What creates habit loops? What brings users back?]
 
@@ -566,6 +604,10 @@ skill-version: 0.2.0
 - [ ] Accessibility: ARIA landmarks, focus management, screen reader announcements
 - [ ] Wayfinding: breadcrumbs, deep-link strategy, URL state management
 - [ ] FTUX: 5-stage onboarding flow, empty states with CTA + value prop
+- [ ] Product Navigation Map covers all Proto v1 scope items (including placeholders)
+- [ ] Navigation section count is >= 50% of primary competitor's section count
+- [ ] 5-Minute Demo Script exists with at least 4 different pages touched
+- [ ] Demo script tells a coherent product narrative (not just a feature list)
 - [ ] Feedback block written back to PRD's End-to-End Experience section
 - [ ] Output matches the Output Contract (every section present)
 
@@ -600,3 +642,11 @@ skill-version: 0.2.0
 - Original 10-criterion design checklist (now section 3A)
 - Output format structure (extended, not replaced)
 - Quality checklist (extended from 7 to 19 items)
+
+### v0.3.0 Changes (2026-05-20, prototype gap analysis)
+
+| # | Gap Identified | Section Added | Rationale |
+|---|---------------|---------------|-----------|
+| 14 | No demo narrative forcing function | 5-Minute Demo Script (mandatory) | Pipeline produced a 2-page prototype because the design had no mechanism to ensure the product surface was demo-walkable. A flat demo script ("open table, filter, view detail") signals the design surface is too narrow. The script forces the designer to ensure 4+ pages with a coherent product narrative. |
+| 15 | No product navigation map | Product Navigation Map | Designer didn't plan the full page inventory. Without an explicit map covering Proto v1 scope, the prototype only built what was in Eng v1 — missing placeholder pages that make the product feel complete. |
+| 16 | No competitor interaction pattern inputs | Updated Input Contract | Designer only received competitive capabilities from Research, not interaction patterns (sidebar structure, workflow types, integration pages). Added Interaction Pattern Benchmarking and Prototype Surface Requirements as required inputs. |

@@ -335,6 +335,40 @@ When running `--mode autonomous`, the pipeline makes decisions without pausing. 
 
 All flags are collected in `pipeline-state.md` under `## Autonomous Mode Flags` and presented as a summary when the pipeline completes.
 
+## PDF Generation (Mandatory)
+
+Every markdown artifact produced by any stage MUST have a companion PDF generated immediately after the markdown is written. This ensures human-readable output at every step.
+
+### Rules
+1. **When:** After each stage writes its `.md` artifact (and after any feedback-loop version bump produces a new `.md`)
+2. **How:** Use the `pdf` skill to convert markdown → PDF
+3. **Naming:** Same base name as the markdown file: `research-v1.md` → `research-v1.pdf`, `prd-v[final].md` → `prd-v[final].pdf`
+4. **Delivery:** In interactive mode, present BOTH the MD link and PDF link to the user after each stage
+5. **Git:** PDFs are committed alongside their markdown source in the same stage commit
+6. **Scope:** Applies to ALL depth modes (quick, standard, deep)
+
+### What Gets a PDF
+
+| Artifact | Stage | Gets PDF? |
+|----------|-------|-----------|
+| `current-state-v[N].md` | 0.5 | Yes |
+| `research-v[N].md` | 1 | Yes |
+| `prd-v[N].md` (every version) | 2 + feedback loops | Yes |
+| `gandalf-evaluation-v[N].md` | 3 | Yes |
+| `debate-v[N].md` | 3.5 | Yes |
+| `design-spec-v[N].md` | 4 + feedback loops | Yes |
+| `prototype-v[N].html` | 5 | No (already HTML) |
+| `validation-plan-v[N].md` | 5.5 | Yes |
+| `launch-readiness-v[N].md` | 6 | Yes |
+| `eng-alignment-v[N].md` | 6.5 | Yes (also gets PPTX) |
+| `post-launch-eval-v[N].md` | 7 | Yes |
+
+### PDF Quality Check
+After generating each PDF, verify:
+- File exists and is non-zero bytes
+- Page count is reasonable (not 0, not 500)
+- Content matches the markdown source (spot-check first and last sections)
+
 ## Error Handling
 
 - If any stage fails, log the error in pipeline-state.md and continue to the next stage

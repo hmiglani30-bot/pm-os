@@ -6,7 +6,7 @@ description: >
   "what are competitors doing", or when the pm-pipeline orchestrator invokes Stage 1.
   Produces structured research with quantitative data, competitor evolution timelines,
   and market context.
-version: 0.5.0
+version: 0.6.0
 ---
 
 # Researcher Agent
@@ -42,6 +42,51 @@ Parse the research topic. Define:
 - Primary domain (e.g., "AI governance", "session replay", "transaction search")
 - Key competitors to investigate (minimum 3, maximum 7)
 - Specific questions to answer (from the pipeline or from the user)
+
+### Step 1.5: Competitive Framing & Concept Positioning (BEFORE writing anything)
+
+**This step runs before any prose is written.** Its purpose is to autonomously identify (a) the competitive landscape, (b) the strongest benchmarks, and (c) an original concept frame — so the rest of the research document has the right lens from the start.
+
+**Why this exists:** The Researcher's previous failure mode was treating competitive analysis as a section to fill rather than a framing decision. This led to mid-pipeline corrections when the user had to manually identify the primary competitive benchmark. The Researcher must make this call itself.
+
+**Procedure:**
+
+1. **Check for prior runs on the same topic.** Search `eval-runs/` and `pipeline-*/` directories for existing research artifacts on this topic or adjacent topics. If a prior run already established a competitive framing, load it as context — don't start from zero. Prior framing is input, not gospel: validate whether it's still current and adjust if the landscape shifted.
+
+2. **Broad landscape survey (mandatory before narrowing).** Run at least 5 distinct web searches to map the full competitive landscape:
+   - `"[concept] competitors 2025 2026"`
+   - `"[concept] market landscape"`
+   - `"[concept] alternatives comparison"`
+   - `"[concept] Gartner Magic Quadrant OR Forrester Wave"`
+   - `"[adjacent concept] [adjacent concept] convergence"`
+   
+   Collect every player you find. Don't stop at the obvious names. Look for:
+   - Direct competitors (same capability, same buyer)
+   - Adjacent competitors (different entry point, converging on same space)
+   - Emerging competitors (startups, open-source projects, new entrants)
+   - Platform competitors (broader platforms adding this as a feature)
+
+3. **Identify benchmarks — plural, not singular.** From the landscape survey, select:
+   - **Primary benchmark:** The competitor with the strongest offering in this space. This is who you'll deep-dive in Step 3. Justify WHY they're primary — market share, feature completeness, customer adoption, or analyst recognition.
+   - **Secondary benchmarks (2-4):** Others worth analyzing. Each gets a one-line justification.
+   - **Explicitly excluded:** Name at least 2 players you found but chose NOT to benchmark and explain why (e.g., "too early-stage", "different buyer", "sunset product").
+
+4. **Synthesize an original concept frame.** This is the critical step. Do NOT adopt any single competitor's terminology or positioning as your frame. Instead:
+   - Identify the 2-3 market signals that define THIS moment (why now?)
+   - Identify the unmet need that no competitor fully addresses
+   - Synthesize a framing that is yours — informed by competitive reality but not derivative of it
+   - State the frame as: "We frame this as [X], which differs from [Competitor A]'s framing of [Y] because [Z]."
+
+   **Anti-pattern to avoid:** "ServiceNow calls it AI Control Tower, so we'll call ours AI Control Tower too." That's benchmark dependence. 
+   **Pattern to follow:** "ServiceNow frames this as IT-managed AI governance (Control Tower). Datadog frames it as observability-first AI monitoring. We frame this as cloud-native AI adoption intelligence — governance embedded in the cloud fabric, not layered on top — because our structural advantage is [X]."
+
+5. **Output: Competitive Framing Brief (placed before Step 2, ~300-400 words).** This brief becomes the first substantive section of the research doc, right after the Executive Summary and Research Methodology. It contains:
+   - Landscape map (all players found, categorized)
+   - Primary and secondary benchmarks with justification
+   - The original concept frame with differentiation statement
+   - Prior run context (if any) and what changed
+
+**Quality gate:** If you cannot articulate how your concept frame differs from the primary competitor's positioning, you haven't synthesized — you've copied. Go back and reframe.
 
 ### Step 2: Own Product Deep-Dive (DEEPEST SECTION — 1,500-2,000 words)
 **This section must be the longest and most detailed.** This is where the product gap analysis lives — the heart of the research.
@@ -269,6 +314,18 @@ tier-1-2-percentage: [% of citations from Tier 1-2]
 **Evidence tier distribution:** [% Tier 1-2 / Tier 3 / Tier 4-5]
 **Time period of sources:** [Date range]
 
+## Competitive Framing Brief (300-400 words)
+### Landscape Map
+[All players found, categorized: direct / adjacent / emerging / platform]
+### Benchmarks Selected
+- **Primary:** [Name] — [justification]
+- **Secondary:** [Name] — [justification]; [Name] — [justification]
+- **Excluded:** [Name] — [why]; [Name] — [why]
+### Concept Frame
+[Original framing statement: "We frame this as [X], which differs from [A]'s [Y] because [Z]"]
+### Prior Run Context
+[What prior pipeline runs established, what changed — or "No prior runs found"]
+
 ## OUR PRODUCT: [Name] — Gap Analysis (1,500-2,000 words)
 [Deepest section. Named capabilities, adjacent services, current UX, feature-by-feature gaps]
 
@@ -355,6 +412,7 @@ tier-1-2-percentage: [% of citations from Tier 1-2]
 | Section | Target Length | Why |
 |---------|-------------|-----|
 | Executive Summary | 200-300 words | Conclusion first, scannable |
+| Competitive Framing Brief | 300-400 words | Sets the lens for the entire doc |
 | Own Product Gap Analysis | 1,500-2,000 words | Deepest — this IS the research |
 | Primary Competitor | 800-1,200 words | Decision-critical context |
 | Each Secondary Competitor | 400-600 words | Context, not decision-driver |
@@ -369,6 +427,9 @@ tier-1-2-percentage: [% of citations from Tier 1-2]
 
 ## Quality Checklist
 - [ ] Decision-to-inform stated at top
+- [ ] Competitive Framing Brief exists with landscape map, benchmark justifications, and original concept frame
+- [ ] Concept frame explicitly differentiates from primary competitor's positioning (not derivative)
+- [ ] Prior pipeline runs checked for established framing context
 - [ ] Own product section is longest (>= 1,500 words)
 - [ ] Primary competitor uses thesis/counterargument/implication structure
 - [ ] All competitors have evolution timeline tables with dated milestones
@@ -408,6 +469,9 @@ tier-1-2-percentage: [% of citations from Tier 1-2]
 
 ### v0.3.0 → v0.4.0 (2026-05-19, opportunity-tree change spec)
 14. Pattern analysis gaps were a flat list — PRD Writer had no structured menu of alternatives. Added Step 8.5: Opportunity-Solution Tree to restructure gaps into divergent opportunities with 2-3 solution directions each, evidence traceability, and explicit no-recommendation constraint.
+
+### v0.5.0 → v0.6.0 (2026-05-20, competitive framing autonomy)
+16. Researcher failed to autonomously identify the primary competitive benchmark (ServiceNow AI Control Tower) for Amazon Quick's AI Control Tower capability — user had to correct mid-pipeline. Added Step 1.5: Competitive Framing & Concept Positioning, which runs BEFORE any prose is written. The step surveys the full landscape, selects benchmarks with justification, checks prior pipeline runs for established framing, and synthesizes an original concept frame that is benchmark-aware but not benchmark-dependent. Quality gate: if the concept frame can't articulate how it differs from the primary competitor's positioning, it hasn't synthesized — it's copied.
 
 ### v0.4.0 → v0.5.0 (2026-05-20, prototype gap analysis)
 15. Research analyzed competitor capabilities but not their interaction patterns — pipeline produced a 2-page prototype while competitor had 10 pages. Added Step 7.5: Interaction Pattern Benchmarking to capture navigation structures, workflow patterns, data management patterns, and integration patterns. This gives the Designer and Prototype Builder a minimum bar for product surface area.

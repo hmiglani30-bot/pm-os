@@ -1,0 +1,9 @@
+{
+  "name": "pm-pipeline",
+  "version": "0.1.0",
+  "description": "Multi-agent PM workflow pipeline: Researcher → PRD Writer → Gandalf (adversarial gate) → Designer → Prototype Builder → Launch Readiness",
+  "author": {
+    "name": "Ashu"
+  },
+  "keywords": ["pm", "product-management", "multi-agent", "pipeline", "prototype", "prd"]
+}

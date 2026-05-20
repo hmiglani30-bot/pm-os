@@ -87,6 +87,7 @@ Invoke the `prototype-builder` skill in **Vision Mode** (default). Pass the appr
 ### Stage 6: Launch Readiness
 Invoke the `launch-readiness` skill. Pass all approved artifacts (using the latest versions, including feedback-patched PRD and design spec).
 - Output: `launch-readiness-v1.md` — eng spec, acceptance criteria, phased rollout, success metrics, meeting deck outline
+- **After completion:** Append key findings to `stage-notes.md` under `## Stage 6 Notes`
 
 ### Stage 6.5: Engineering Alignment Package
 Invoke the `eng-alignment-packager` skill. Pass all pipeline artifacts (latest versions).

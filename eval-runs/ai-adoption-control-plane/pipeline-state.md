@@ -27,11 +27,12 @@ started: 2026-05-19T13:58:00Z
 ## Skill Versions (Current)
 | Skill | Version | Key Changes |
 |-------|---------|-------------|
-| Researcher | v0.4.0 | +Opportunity-Solution Tree (Step 8.5) |
-| PRD Writer | v0.3.0 | +Solution Lineage table |
-| Gandalf | v0.2.0 | +Tree-usage challenge question |
-| Designer | v0.2.0 | +10 UX depth sections |
-| Prototype Builder | v0.2.0 | +a11y, dark mode, animations, responsive |
+| Current State Auditor | v0.2.0 | +Competitor UX Pattern Inventory, +Prototype Surface Requirements |
+| Researcher | v0.5.0 | +Interaction Pattern Benchmarking (Step 7.5) |
+| PRD Writer | v0.4.0 | +Dual-scope boundary (Eng v1 / Proto v1), +Solution Lineage table |
+| Gandalf | v0.3.0 | +Q12 Product Completeness, 12 questions / 10 pass threshold |
+| Designer | v0.3.0 | +Product Navigation Map, +5-Minute Demo Script, +interaction pattern extraction |
+| Prototype Builder | v0.3.0 | +Vision Mode (default), +Step 0 nav surface planning, +Step 8.5 demo walkability |
 | Launch Readiness | v0.2.0 | +sprint breakdown, RACI, monitoring, rollback |
 | Post-Launch Evaluator | v0.1.0 | NEW — deferred evaluation stage |
 

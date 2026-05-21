@@ -6,7 +6,7 @@ description: >
   "what are competitors doing", or when the pm-pipeline orchestrator invokes Stage 1.
   Produces problem-hypothesis-led research with quantitative data, competitor
   evolution timelines, right-to-win analysis, and market context.
-version: 1.0.0
+version: 2.0.0
 ---
 
 # Researcher Agent
@@ -14,6 +14,8 @@ version: 1.0.0
 Investigate a user-supplied product idea. Start from the user's problem hypothesis, expand it into research dimensions, validate whether the problem is real, map the category, identify the right competitors, and produce evidence-backed implications for the PRD Writer.
 
 **This is problem-hypothesis-led research, not template-led research.** The report must follow the PM's learning journey: what's the problem → is it real → who has it → how do they solve it today → who else is building for it → are we the right ones to solve it → what should we build.
+
+**Context Fusion awareness (v2.0.0):** If a Context Contract (`context-contract-v[N].md`) is provided, load it before Step 0. It contains Must-Preserve features, Must-Add features, Product Layer Map, Strategic Angle Registry, and Regression Watchlist from prior iterations. The research must cover ALL product layers and strategic angles identified in the contract.
 
 ## Core Principles
 
@@ -65,6 +67,51 @@ The Researcher must capture or infer the following inputs:
 - What competitors do you already know about?
 - Are there specific dimensions you care most about?
 
+### Step 0.5: Strategic Angle Inventory & Context Fusion Reconciliation (NEW v2.0.0)
+
+**This step runs AFTER capturing the problem hypothesis but BEFORE defining research dimensions.**
+
+**Purpose:** Prevent the failure mode where research investigates the obvious first interpretation of the idea but misses strategic angles surfaced in prior iterations.
+
+#### A. Load Context Contract (if available)
+If a `context-contract-v[N].md` exists, read it. Extract:
+- Product Layer Map (each layer becomes a candidate research dimension)
+- Strategic Angle Registry (each "Evaluate" angle becomes a research question)
+- Must-Add Feature Inventory (each item should be investigated competitively)
+- Regression Watchlist (items to specifically track in competitive analysis)
+
+#### B. Scan Prior Artifacts for Strategic Angles
+Even without a Context Contract, scan the pipeline directory for prior research, PRDs, debates, and prototypes. For each, extract strategic angles not present in the user's current problem statement. Common angles to check:
+
+| Angle Category | What to Look For | Auto-suggest If Found |
+|---------------|-----------------|----------------------|
+| Autonomous agent behaviors | Monitoring, alerting, report generation without human trigger | Add "agentic workflows" dimension |
+| Decision workflows | Ask → assemble → inspect → act → reuse patterns | Add "decision/explainability layer" dimension |
+| Contextual AI assistant | Right rail, inline suggestions, Q-style interaction | Add "contextual AI patterns" dimension |
+| Reporting / audit automation | Weekly reports, compliance evidence, board-ready outputs | Add "reporting automation" dimension |
+| Multi-layer architecture | Control + operating + decision + reporting layers | Ensure ALL layers are covered as dimensions |
+| Connector / integration ecosystem | Marketplace, third-party data sources | Add "integration patterns" dimension |
+| Explainability / provenance | Evidence inspection, counterfactuals, confidence scores | Add "trust/explainability" dimension |
+
+#### C. Product Layer Detection
+Classify the idea into product layers based on all available context:
+
+| Layer | Description | Evidence | Research Coverage Required |
+|-------|-------------|----------|--------------------------|
+| Control / Governance | Discover, inventory, govern, secure | [source] | [which dimensions cover this] |
+| Autonomous Operating | Agents monitor, alert, act without human trigger | [source] | [which dimensions cover this] |
+| Decision / Explainability | Inspect evidence, see provenance, decide | [source] | [which dimensions cover this] |
+| Reporting / Audit | Executive reports, compliance, audit trail | [source] | [which dimensions cover this] |
+
+Not every product will have all layers. But the Researcher MUST check for each and document which are present or absent. If a prior artifact included a layer that the current problem statement doesn't mention, flag it: "Prior [artifact] included [layer] — should research cover this?"
+
+#### D. Context Fusion Reconciliation Check
+After defining research dimensions (Step 1), compare them against the Context Contract:
+- Every product layer in the Contract must be covered by at least one research dimension
+- Every Must-Add feature must be investigable through at least one dimension
+- Every "Evaluate" strategic angle must map to a dimension or question
+- If any Context Contract item has no research coverage, add a dimension or flag the gap
+
 ### Step 1: Define Research Dimensions
 
 Before doing ANY research, define 8-12 dimensions the research will cover. Show these dimensions to the user (or include them in the output) so the scope is explicit and auditable.
@@ -89,6 +136,11 @@ Before doing ANY research, define 8-12 dimensions the research will cover. Show 
 - Regulatory/Compliance landscape
 - Technology readiness / build vs. buy
 - Adjacent opportunity mapping
+- **Agentic / Autonomous Workflows** (auto-suggest for any product involving desktop agents, AI tools, monitoring, or operational automation — covers autonomous monitoring, proactive alerting, report generation, agent orchestration)
+- **Contextual AI Patterns** (auto-suggest when product involves assistant/copilot rails, inline suggestions, or Q-style interaction)
+- **Reporting & Audit Automation** (auto-suggest when product involves compliance, governance, or executive stakeholders — covers automated reports, audit trails, board-ready outputs)
+
+**Context Fusion reconciliation (v2.0.0):** After defining dimensions, run the reconciliation check from Step 0.5D. Every product layer and Must-Add feature from the Context Contract must be covered.
 
 ### Step 1.5: Competitive Framing & Concept Positioning
 
@@ -314,6 +366,11 @@ For each competitor, document within their deep-dive OR in a consolidated table:
 | Measurement | | Dashboards, reports, scorecards, maturity models | |
 | Audit/Activity | | Audit trail, activity log, case management | |
 | Onboarding | | Setup wizard, getting started, demo data | |
+| **Autonomous Agent Behaviors** (v2.0.0) | | Agents that monitor without human trigger, proactive alerts, scheduled scans, auto-generated reports, anomaly detection, agent health/status dashboards | |
+| **Human-in-the-Loop Workflows** (v2.0.0) | | What requires human approval, notification → review → approve/reject flows, escalation paths, override mechanisms | |
+| **Decision Workflows** (v2.0.0) | | Ask → assemble → inspect → act → reuse patterns, evidence presentation, recommendation cards, decision audit trail | |
+| **Contextual AI Assistant** (v2.0.0) | | Right rail / copilot, inline suggestions, natural language query, "what changed since last review", contextual recommendations | |
+| **Reporting / Audit Automation** (v2.0.0) | | Automated weekly/quarterly reports, executive summary generation, compliance evidence packaging, board report templates, report scheduling | |
 
 ### Step 12: Pattern Synthesis (300-500 words)
 
@@ -622,9 +679,19 @@ The PM-OS user may also run GPT deep research on the same topic. If GPT deep res
 
 When invoked as Stage 1 by the pm-pipeline orchestrator:
 - The pipeline should pass the user's problem description (from the initial prompt or Stage 0 intake)
+- **The pipeline MUST pass the Context Contract (`context-contract-v[N].md`) from Stage 0.75 if it exists**
 - If no problem description is provided, the Researcher MUST ask for one before proceeding (or flag the assumption)
 - The output feeds into Stage 2 (PRD Writer), Stage 4 (Designer), and Stage 5 (Prototype Builder)
 - The Competitive Framing Brief is also used by the Current State Auditor if it runs before the Researcher
+
+### Context Contract Reconciliation (v2.0.0)
+After completing the research artifact, the Researcher must reconcile against the Context Contract:
+- For every Must-Preserve feature: did competitive analysis cover it? Is the feature competitively grounded?
+- For every Must-Add feature: did research investigate its feasibility and competitive landscape?
+- For every product layer: does at least one research section cover it?
+- For every strategic angle with status "Evaluate": did research produce evidence for or against it?
+
+If any Context Contract item has no research coverage, append a "Context Reconciliation Gaps" section to the output listing what was not covered and why.
 
 ## Eval Learnings Log
 
@@ -653,6 +720,17 @@ When invoked as Stage 1 by the pm-pipeline orchestrator:
 
 ### v0.5.0 → v0.6.0 (2026-05-20, competitive framing autonomy)
 16. Researcher failed to autonomously identify primary competitive benchmark — added Competitive Framing & Concept Positioning step
+
+### v1.0.0 → v2.0.0 (2026-05-20, context fusion integration + agentic pattern depth)
+39. Added Step 0.5: Strategic Angle Inventory & Context Fusion Reconciliation — prevents research from missing strategic angles surfaced in prior iterations
+40. Added Product Layer Detection — classifies the idea into control/autonomous/decision/reporting layers and ensures all are covered
+41. Added Context Fusion Reconciliation Check — compares research dimensions against Context Contract's Must-Preserve, Must-Add, and product layers
+42. Added "agentic/autonomous workflows" as auto-suggested optional dimension for products involving agents or monitoring
+43. Added "contextual AI patterns" as auto-suggested optional dimension for products involving assistant/copilot rails
+44. Added "reporting & audit automation" as auto-suggested optional dimension for governance/compliance products
+45. Expanded Interaction Pattern Benchmarking with 5 new pattern categories: autonomous agent behaviors, human-in-the-loop workflows, decision workflows, contextual AI assistant, reporting/audit automation
+46. Updated Pipeline Integration to require Context Contract as input and mandate reconciliation after research completion
+47. Added prior framing comparison: Step 1.5 now compares against prior-run concept frames AND prior prototype features
 
 ### v0.6.0 → v1.0.0 (2026-05-20, full structural rewrite based on user + GPT critique)
 17. Document structure followed rigid template instead of PM learning journey — restructured entire output to be problem-hypothesis-led

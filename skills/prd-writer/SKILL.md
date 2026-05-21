@@ -5,7 +5,7 @@ description: >
   "create product requirements", "draft product spec", or when the pm-pipeline orchestrator
   invokes Stage 2. Produces a problem-led PRD with detailed problem statements,
   solution narrative, customer experience, and 25 MECE FAQs.
-version: 1.0.0
+version: 2.0.0
 ---
 
 # PRD Writer
@@ -13,6 +13,8 @@ version: 1.0.0
 Write human-readable product requirements documents. The PRD helps product, design, engineering, and leadership understand the customer problem, proposed solution, scope, and path to validation.
 
 **This is a product document, not a pipeline artifact.** Do NOT expose internal pipeline mechanics in the final PRD. No "Decision to Inform," "Solution Lineage," "Design Feedback," "Prototype Patch," "v3 patch," stage metadata, or version tracking in the visible PRD body. Those belong in pipeline-state.md or appendix only.
+
+**Context Fusion awareness (v2.0.0):** If a Context Contract (`context-contract-v[N].md`) is provided, load it before writing. The contract contains Must-Preserve features, Must-Add features, Product Layer Map, and Design/Prototype Mandates from prior iterations. The PRD must reconcile against it — any Must-Preserve item excluded from the PRD requires explicit justification.
 
 ## Core Principles
 
@@ -37,8 +39,10 @@ The PRD must be readable without the research document. Key research findings sh
 ## Input
 
 - `research-v[N].md` from the Researcher stage
+- `context-contract-v[N].md` from Context Fusion stage (if available)
 - The user's original problem hypothesis (from the Researcher's Section 1 or from the pipeline prompt)
 - Any user-provided context or constraints
+- Prior prototype references (if provided — e.g., ROI v2 or richer manual iterations)
 
 **Extract from research before writing:**
 1. The user-supplied problem hypothesis
@@ -49,6 +53,21 @@ The PRD must be readable without the research document. Key research findings sh
 6. Capability requirements
 7. Right-to-win assessment
 8. Major risks and unknowns
+
+**Extract from Context Contract before writing (v2.0.0):**
+1. Product Thesis — seeds the solution narrative
+2. Must-Preserve Feature Inventory — each item becomes a row in Scope and Phasing
+3. Must-Add Feature Inventory — each item becomes a candidate capability or scope row
+4. Product Layer Map — becomes the mandatory "Product Layers" subsection
+5. Strategic Angle Registry — angles with status "Evaluate" may generate new capabilities
+6. Design & Prototype Mandates — carried forward to downstream stages
+7. Regression Watchlist — items to track through the PRD
+
+**Context Reconciliation (mandatory if Context Contract exists):**
+After drafting the PRD, compare the Scope and Phasing table against the Context Contract:
+- Every Must-Preserve item must appear in the scope table (v1, prototype, or explicit exclusion with rationale)
+- Every Must-Add item must appear (as capability, scope row, or explicit exclusion with rationale)
+- Any Must-Preserve item excluded from the PRD must have an explicit "Exclusion Rationale" note — silent omission is a quality failure
 
 ## PRD Structure
 
@@ -103,7 +122,27 @@ JTBD should feel obvious after reading the problem statements. Use a table:
 
 ### Section 4: Solution Proposal
 
-#### 4a. Solution Narrative (300-400 words MINIMUM — before any capabilities)
+#### 4a. Product Layers (NEW v2.0.0 — mandatory for multi-layer products)
+
+Before describing the solution, explicitly name the product's architectural layers. This prevents the failure mode where downstream stages only design/build the most obvious layer.
+
+| Layer | What It Does | Key Capabilities | Who It Serves |
+|-------|-------------|-----------------|---------------|
+| Control / Governance | Discover, inventory, govern, secure assets | [list] | [persona] |
+| Autonomous Operating | Agents monitor, alert, act without human trigger | [list] | [persona] |
+| Decision / Explainability | Inspect evidence, see provenance, make decisions | [list] | [persona] |
+| Reporting / Audit | Executive reports, compliance, audit trail | [list] | [persona] |
+
+Not every product has all four layers. But the PRD Writer MUST check for each:
+- If the Context Contract identifies a layer, include it unless explicitly excluded with rationale
+- If research surfaced agentic/autonomous patterns in competitors, this product likely needs an operating layer
+- If the product involves governance/compliance, it almost certainly needs a reporting/audit layer
+
+**Single-layer products** (simple features, utilities) can skip this table with a note: "This is a single-layer product — [layer name]."
+
+**Multi-layer products** MUST have this table. It becomes the structural backbone of the solution proposal.
+
+#### 4b. Solution Narrative (300-400 words MINIMUM — before any capabilities)
 
 Write a coherent narrative explaining:
 - **What we are proposing.** Name it, describe it in one paragraph.
@@ -113,7 +152,7 @@ Write a coherent narrative explaining:
 - **What the v1 wedge is.** What's the minimum that delivers value?
 - **What the solution is NOT trying to do.** Explicit scope exclusions.
 
-#### 4b. Core Capabilities (4-7 capabilities)
+#### 4c. Core Capabilities (4-7 capabilities)
 
 For each capability, write a paragraph (not bullets):
 - **What it does:** Specific functionality
@@ -122,10 +161,31 @@ For each capability, write a paragraph (not bullets):
 - **Why it matters:** What's new vs. status quo
 - **What changes for the user:** Before → after
 
-### Section 5: End-to-End Customer Experience (400-600 words)
+#### 4d. Autonomous Agent Behaviors (NEW v2.0.0 — mandatory for agentic products)
 
-**This is a first-class section, not a feedback-loop afterthought.** Describe the experience as a coherent journey:
+For any product that involves agents, autonomous monitoring, or proactive automation, this subsection is MANDATORY. Skip only for simple features with no autonomous behavior.
 
+| Agent / Automation | What It Does Autonomously | What It Suggests | What Requires Human Approval | How It's Audited |
+|-------------------|--------------------------|-----------------|-----------------------------|--------------------|
+| Discovery Agent | Scans for new AI tools on schedule | "3 new unsanctioned tools detected" | Adding to governance policy | Scan log with timestamps |
+| Governance Agent | Monitors policy compliance continuously | "Tool X violating data residency policy" | Enforcement actions (block/restrict) | Policy action audit trail |
+| Spend Agent | Tracks AI spend across vendors | "Spending anomaly: 40% increase in Copilot seats" | Budget reallocation | Cost event history |
+| Report Agent | Generates weekly/quarterly reports | "Board report ready for review" | Publishing/distributing report | Report generation log |
+
+For each agent/automation:
+- **What the human does:** What triggers or actions remain human-initiated
+- **What the agent does autonomously:** What runs without human intervention
+- **What the agent suggests:** Recommendations that surface to the human
+- **What requires approval:** Actions that need explicit human sign-off before executing
+- **How the action is audited:** How the user can review what the agent did and inspect evidence
+
+**This subsection ensures downstream stages (Designer, Prototype Builder) know to design surfaces for agent status, agent actions, and human approval workflows — not just static dashboards.**
+
+### Section 5: End-to-End Customer Experience (400-800 words)
+
+**This is a first-class section, not a feedback-loop afterthought.** Describe the experience as a coherent journey.
+
+**For single-layer products (simple features):**
 1. **Day 0: Setup / Onboarding** — What happens when the feature is first enabled?
 2. **First value moment** — What does the user see within the first hour/day?
 3. **Daily / weekly workflow** — What's the ongoing rhythm?
@@ -134,20 +194,35 @@ For each capability, write a paragraph (not bullets):
 6. **Executive or compliance reporting** — How does leadership consume this?
 7. **Ongoing monitoring** — What keeps users coming back?
 
+**For multi-layer products (v2.0.0), describe ALL product layers as journeys:**
+
+| Layer | Journey | Key Touchpoints |
+|-------|---------|----------------|
+| Control / Admin | Admin opens dashboard → reviews alerts → drills into detail → takes governance action → verifies result | Command center, inventory, policy editor |
+| Autonomous Agent | Agents scan on schedule → surface findings → wait for approval on high-risk actions → log all activity | Agent status dashboard, notification feed, approval queue |
+| Decision / Action | User receives recommendation → inspects evidence → reviews provenance → decides → action persists as case | Decision cards, evidence panel, case management |
+| Executive / Reporting | Scheduled report generated → executive reviews → exports for board → compliance evidence archived | Report preview, export, audit trail |
+
+Each layer's journey should feel coherent when read independently AND when read as a connected system. The connections between layers (e.g., "agent surfaces finding → human reviews in decision layer → action audited in reporting layer") should be explicit.
+
 When receiving design or prototype feedback (from Designer or Prototype stages), integrate it into this section seamlessly. Do NOT label it as "Design Feedback" or "Prototype Validation."
 
 ### Section 6: Scope and Phasing
 
-| Capability | Ships in v1 | Shown in Prototype | v2 | v3 | Rationale |
-|-----------|:-----------:|:------------------:|:---:|:---:|-----------|
+| Capability | Ships in v1 | Shown in Prototype | In Prior Prototype? | v2 | v3 | Rationale |
+|-----------|:-----------:|:------------------:|:-------------------:|:---:|:---:|-----------|
 
 - "Ships in v1" = production quality
 - "Shown in Prototype" = vision prototype, including placeholders and "coming soon" states
+- **"In Prior Prototype?" (v2.0.0)** = if a richer prior prototype exists (e.g., ROI v2), show whether it had this feature. This makes regressions visible.
 - Prototype scope >= v1 scope (prototype tells complete product story)
 - For each "not in v1" item: why it was cut (specific tradeoff, not just "v2")
 - For each "shown in prototype but not v1": what the prototype shows and why it matters for the product narrative
+- **For each item "In Prior Prototype? = Yes" but "Shown in Prototype = No":** explicit regression rationale required
 
 **Rule:** If research shows competitors have N navigation sections and v1 only covers N/3, remaining sections should appear in the prototype as lightweight placeholders.
+
+**Context Contract rule (v2.0.0):** Every Must-Preserve item from the Context Contract must appear in this table. Every Must-Add item must appear. Items may be marked "v2" or "v3" but must have specific exclusion rationale — not just "later."
 
 ### Section 7: Success Metrics (300-400 words)
 
@@ -450,6 +525,17 @@ Ranking rationale: [2-3 sentences]
 
 ### v0.3.0 → v0.4.0 (2026-05-20, prototype gap analysis)
 14. Single-scope boundary caused minimalist prototype — added dual-scope (Eng v1 + Proto v1)
+
+### v1.0.0 → v2.0.0 (2026-05-20, context fusion integration + multi-layer product support)
+32. Added Context Contract as input — seeds product thesis, must-preserve/must-add features, product layers
+33. Added Context Reconciliation — mandatory check that every Must-Preserve item appears in scope table
+34. Added Section 4a: Product Layers — mandatory table classifying product into architectural layers (control/autonomous/decision/reporting)
+35. Added Section 4d: Autonomous Agent Behaviors — mandatory for agentic products, defines what agents do autonomously, suggest, require approval, and how audited
+36. Expanded Section 5 (End-to-End Experience) to cover ALL product layers — multi-layer products describe control, agent, decision, and reporting journeys
+37. Added "In Prior Prototype?" column to Scope and Phasing table — makes regressions from richer prior prototypes visible
+38. Added prior prototype references as input — PRD must reconcile against richer iterations
+39. Renumbered capabilities subsection from 4b to 4c (after new Product Layers subsection)
+40. Increased Experience section word target from 400-600 to 400-800 for multi-layer products
 
 ### v0.4.0 → v1.0.0 (2026-05-20, full structural rewrite based on user + GPT critique)
 15. "Decision to Inform" and "Executive Summary" removed from top — conclusions should be earned, not declared first

@@ -8,12 +8,14 @@ description: >
   includes Proto v1 placeholders) and Spec Mode (production-faithful, Eng v1 only).
   Default is Vision Mode. Use Spec Mode only when user explicitly requests it or
   when the pipeline orchestrator specifies --spec-only.
-version: 0.3.0
+version: 1.0.0
 ---
 
 # Prototype Builder
 
 Build single-file HTML prototypes using the Cloudscape Design System. Every prototype must render correctly, pass accessibility checks, meet performance budgets, and survive edge-case data before delivery.
+
+**Context Fusion awareness (v1.0.0):** If a Context Contract (`context-contract-v[N].md`) is provided, load it before Step 0. The contract contains Must-Preserve features, Must-Add features, Design & Prototype Mandates, and Regression Watchlist. The prototype must include ALL Must-Preserve and Must-Add items — any omission is a build failure.
 
 ## Two Modes: Vision vs Spec
 
@@ -43,10 +45,13 @@ Spec Mode is the v0.2.0 behavior — unchanged.
 
 | Input | Source | Required | Validation |
 |-------|--------|:--------:|------------|
-| Design spec (`design-spec-v[N].md`) | Design stage output | Yes | Must contain Cloudscape Component Mapping table, layout wireframe, Product Navigation Map, and 5-Min Demo Script |
-| PRD dual-scope boundary table | PRD stage output | Yes | Must include both Eng v1 and Proto v1 columns |
+| Context Contract (`context-contract-v[N].md`) | Stage 0.75: Context Fusion | Yes (if exists) | Must-Preserve inventory, Must-Add inventory, Design & Prototype Mandates, Regression Watchlist |
+| Design spec (`design-spec-v[N].md`) | Design stage output | Yes | Must contain Cloudscape Component Mapping table, layout wireframe, Product Navigation Map, 5-Min Demo Script, and Human-Agent Interaction Design (if agentic) |
+| PRD dual-scope boundary table | PRD stage output | Yes | Must include both Eng v1 and Proto v1 columns, plus "In Prior Prototype?" column |
+| PRD Autonomous Agent Behaviors | PRD stage output | Yes (if agentic) | Agent behaviors table defining what's autonomous, suggested, requires approval |
 | Research interaction patterns | Research stage output | Yes (Vision Mode) | Interaction Pattern Benchmarking table for navigation surface validation |
-| Existing prototype versions | Prior runs | No | If present, diff against new design spec for delta |
+| Reference prototype (`.html`) | Prior manual iterations (e.g., ROI v2) | No | If present, used for Feature Coverage Matrix comparison — prototype must not regress below reference |
+| Existing prototype versions | Prior pipeline runs | No | If present, diff against new design spec for delta |
 | Mock data schema | Design spec or explicit | No | If absent, derive from design spec entities |
 
 ## Output Contract
@@ -60,16 +65,62 @@ Spec Mode is the v0.2.0 behavior — unchanged.
 
 ## Build Process
 
-### Step 0: Mode Selection & Navigation Surface (NEW — v0.3.0)
+### Step 0: Mode Selection, Navigation Surface & Feature Coverage Matrix (v1.0.0)
 
 1. **Determine mode:** Vision (default) or Spec (explicit request only).
-2. **If Vision Mode:**
+
+2. **Load Context Contract (if available).** Extract:
+   - Must-Preserve Feature Inventory — every item must appear in the prototype
+   - Must-Add Feature Inventory — every item must appear (full, simplified, or placeholder)
+   - Design & Prototype Mandates — binding requirements
+   - Regression Watchlist — items to verify after build
+
+3. **If Vision Mode:**
    - Read the Designer's Product Navigation Map. List every page/section.
    - Read the PRD's dual-scope boundary table. Identify all Proto v1 items.
    - Read the Researcher's Interaction Pattern Benchmarking. Note competitor page counts.
    - **Navigation surface check:** Count your planned pages. If < 50% of primary competitor's page count, add more placeholder pages until you reach parity.
    - For each Proto v1 item NOT in Eng v1: plan the placeholder page content (what it shows, sample data layout, value prop text, "coming soon" elements).
-3. **If Spec Mode:** Skip this step. Proceed with design spec only.
+
+4. **Reference Prototype Comparison (NEW v1.0.0 — if reference prototype provided):**
+   If a richer prior prototype exists (e.g., ROI v2, or a manually-iterated version), compare it against the planned prototype:
+   
+   **Regression gate:** Ask: "Am I building a worse prototype than the reference?" If yes, why?
+   - If "because the design spec didn't include it" — flag upstream. The design spec may need updating.
+   - If "because the PRD excluded it" — check if the exclusion was intentional. If not, flag upstream.
+   - If "intentionally simplified for this iteration" — document the rationale.
+   
+   A regression without rationale is a build failure.
+
+5. **Feature Coverage Matrix (NEW v1.0.0 — MANDATORY before coding):**
+   
+   Before writing any HTML, produce this matrix:
+   
+   | Capability | Source Artifact | Required for Story? | In Prior Prototype? | In Context Contract? | In Planned Prototype? | Build State | Rationale |
+   |-----------|----------------|:-------------------:|:-------------------:|:-------------------:|:---------------------:|-------------|-----------|
+   
+   **Build State values:**
+   - **Full** — Fully interactive with mock data
+   - **Simplified** — Reduced version of the full feature
+   - **Placeholder** — Page with value prop, sample layout, "coming soon" elements
+   - **Excluded** — Not in prototype, with explicit rationale
+   
+   **For agentic products (v1.0.0), these are required defaults that must appear unless explicitly excluded:**
+   - Command center / dashboard hub
+   - Inventory / data table
+   - Connector / source health
+   - Contextual assistant / Q rail (if product includes AI assistant)
+   - Decision workflow (if product has decision layer)
+   - Autonomous / ongoing agents (agent status, dispatch center)
+   - Actions / cases (if product has action layer)
+   - Board / executive report
+   - Audit log
+   - Evidence / source provenance (if product has explainability layer)
+   - Human approval states (if product has autonomous agents)
+   
+   If any required default is missing from the Feature Coverage Matrix, stop and revise the prototype plan before writing code.
+
+6. **If Spec Mode:** Skip steps 3-5. Proceed with design spec only.
 
 ### Step 1: Component Inventory
 Read the design spec's Cloudscape Component Mapping table. List every component needed. Cross-reference with the layout wireframe to confirm placement. In Vision Mode, also inventory components needed for placeholder pages (sidebar nav entries, page headers, placeholder content layouts).
@@ -134,7 +185,7 @@ Test every interactive element end-to-end:
 - [ ] Verify no hardcoded colors — use only Cloudscape CSS custom properties
 - [ ] Verify charts/graphs (if any) use Cloudscape color tokens
 
-### Step 8.5: Vision Mode Validation (NEW — v0.3.0, Vision Mode only)
+### Step 8.5: Vision Mode Validation (v1.0.0, Vision Mode only)
 
 If building in Vision Mode, validate the maximalist prototype:
 - [ ] **Navigation completeness:** Every page in the Designer's Product Navigation Map has a sidebar nav entry
@@ -143,8 +194,14 @@ If building in Vision Mode, validate the maximalist prototype:
 - [ ] **Demo walkability:** Follow the Designer's 5-Minute Demo Script step-by-step in the prototype. Every click, every page transition, every talking point must be achievable.
 - [ ] **Product narrative:** Navigate all pages in order. Does the sidebar tell a coherent product story? Would a first-time user understand this is a complete product?
 - [ ] **Page count check:** Compare prototype page count against Researcher's competitor benchmarks. Log the comparison.
+- [ ] **Context Contract compliance (v1.0.0):** Every Must-Preserve item from the Context Contract is present in the prototype. Every Must-Add item is present (full, simplified, or placeholder). Every Regression Watchlist item is verified.
+- [ ] **Feature Coverage Matrix reconciliation (v1.0.0):** Compare the built prototype against the Feature Coverage Matrix from Step 0. Every "Full" item is fully interactive. Every "Placeholder" item has a navigable page with content.
+- [ ] **Reference prototype regression check (v1.0.0):** If a reference prototype was provided, verify the built prototype does not regress below it in feature count or product story coherence. Log the comparison.
+- [ ] **Agentic surfaces (v1.0.0):** If product is agentic, verify: agent status dashboard exists, notification feed exists, approval queue exists (if agents require approval), audit trail exists, contextual AI rail exists (if applicable).
 
 **If the demo script cannot be followed:** This is a build failure. Identify which pages/interactions are missing and add them before proceeding.
+
+**If any Context Contract Must-Preserve item is missing:** This is a build failure. Add it before proceeding.
 
 ### Step 9: Fidelity Report (Feedback Edge)
 After build and validation, emit `fidelity-report-v[N].md`:
@@ -302,3 +359,4 @@ status: draft | validated | approved
 | 2026-05-19 | Interactions validated by structure only | No behavioral testing step | Added Step 6: click-through interaction testing |
 | 2026-05-19 | No file size or render-time guardrails | Missing performance budget | Added Performance Budget table with 4 metrics |
 | 2026-05-20 | Pipeline produced 2-page prototype vs competitor's 10-page product | Prototype skill only builds to Eng v1 spec — treats prototype as verification, not vision | Added Vision Mode (default): builds maximalist prototype covering full Proto v1 scope including placeholder pages. Added Step 0 (navigation surface planning) and Step 8.5 (demo walkability validation). Spec Mode preserved as opt-in for engineering handoff. |
+| 2026-05-20 | Prototype regressed below richer manual iteration (ROI v2) — missing agentic workflows, decision layer, contextual AI, reporting automation | No mechanism to compare against prior prototypes or Context Contract | v1.0.0: Added Context Contract as input. Added Reference Prototype Comparison with regression gate. Added Feature Coverage Matrix (mandatory before coding). Added agentic product defaults (agent dashboard, approval queue, audit trail, contextual AI rail, etc.). Added Context Contract compliance check in Step 8.5 validation. |

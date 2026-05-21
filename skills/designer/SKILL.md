@@ -9,12 +9,14 @@ description: >
   keyboard nav, accessibility depth, data viz guidance, micro-interactions, responsive
   breakpoint specs, anti-pattern validation, wayfinding, first-time UX, and 5-minute
   demo narrative script.
-version: 0.3.0
+version: 1.0.0
 ---
 
 # UX/Experience Designer
 
 Design the end-to-end experience. NOT just wireframes — explain WHY every layout decision works, what alternatives were considered, and how the design creates stickiness.
+
+**Context Fusion awareness (v1.0.0):** If a Context Contract (`context-contract-v[N].md`) is provided, load it before Phase 1. The contract contains Must-Preserve features, Must-Add features, Product Layer Map, Design & Prototype Mandates, and Regression Watchlist. The design spec must include ALL Must-Preserve and Must-Add features in the Product Navigation Map.
 
 ---
 
@@ -24,18 +26,24 @@ Every invocation of this stage MUST receive these inputs. If any are missing, ha
 
 | Input | Source | Required Fields |
 |-------|--------|----------------|
-| Approved PRD (`prd-v[N].md`) | Stage 2: PRD Writer | Executive Summary, Target Personas, JTBD, Solution Proposal, Success Metrics, End-to-End Experience section |
+| Context Contract (`context-contract-v[N].md`) | Stage 0.75: Context Fusion | Must-Preserve inventory, Must-Add inventory, Product Layer Map, Design Mandates, Regression Watchlist |
+| Approved PRD (`prd-v[N].md`) | Stage 2: PRD Writer | Executive Summary, Target Personas, JTBD, Solution Proposal (with Product Layers), Success Metrics, End-to-End Experience section, Autonomous Agent Behaviors (if agentic) |
 | Gandalf evaluation (`gandalf-evaluation-v[N].md`) | Stage 3: Gandalf | Overall score, section scores, critical gaps flagged, open questions |
 | Research artifact (`research-v[N].md`) | Stage 1: Researcher | Competitive landscape, user research findings, market context, **Interaction Pattern Benchmarking table** |
 | Current state audit (`current-state-v[N].md`) | Stage 0.5: Auditor | Competitor UX Pattern Inventory, Prototype Surface Requirements |
+| Prior prototype references (`.html` files) | Previous pipeline runs or manual iterations | Feature inventory, navigation pages, built interactions (for regression comparison) |
 
 **Extraction rules:**
+- **Pull Context Contract first (v1.0.0)** — Must-Preserve features, Must-Add features, Product Layer Map, Design Mandates, and Regression Watchlist are binding constraints. The design must include all of them.
 - Pull primary persona and JTBD ranking directly from the PRD — do not re-derive them.
+- **Pull Product Layers from PRD Section 4a** — the design must cover ALL product layers, not just the control/governance layer.
+- **Pull Autonomous Agent Behaviors from PRD Section 4d** — the design must include surfaces for agent status, agent actions, human approval, and evidence inspection.
 - Pull Gandalf-flagged UX gaps and treat each as a mandatory design constraint.
 - Pull competitive screenshots/patterns from Research to inform the Reality Check phase.
-- **Pull Interaction Pattern Benchmarking table from Research** — this defines the minimum navigation surface, workflow patterns, and integration patterns the design must include.
+- **Pull Interaction Pattern Benchmarking table from Research** — this defines the minimum navigation surface, workflow patterns, and integration patterns the design must include. Pay special attention to autonomous agent behaviors, decision workflows, contextual AI assistant, and reporting/audit automation patterns.
 - **Pull Prototype Surface Requirements from Current State Audit** — this defines minimum page count and demo narrative requirements.
 - **Pull Proto v1 scope from PRD's dual-scope boundary table** — the design must cover ALL Proto v1 items, not just Eng v1 items. Proto v1 items not in Eng v1 get designed as placeholder pages, coming-soon states, or simplified mocks.
+- **If a prior richer prototype exists, extract its feature inventory** — compare against the current design plan. Any feature in the prior prototype not in the current design plan must have an explicit exclusion rationale.
 
 ---
 
@@ -73,7 +81,54 @@ The design spec MUST contain every section listed below. Omitting a section is a
 
 ## Design Sequence
 
-Execute in this exact order: **First Principles -> Reality Check -> Checklist + Audits**
+Execute in this exact order: **Context Reconciliation -> First Principles -> Reality Check -> Checklist + Audits**
+
+---
+
+### Phase 0: Product Context Reconciliation (NEW v1.0.0 — mandatory)
+
+**This phase runs BEFORE any design work begins.** Its purpose is to prevent the failure mode where the design faithfully implements a narrow scope while richer prior artifacts are silently discarded.
+
+#### Step 1: Design Scope Contract
+
+Before writing ANY design spec prose, produce a Design Scope Contract:
+
+1. **Product experience thesis** (3-5 sentences) — What is this product? What layers does it have? What makes it compelling? Informed by ALL prior context, not just the latest PRD.
+
+2. **Primary persona and secondary personas** — From PRD, validated against prior artifacts.
+
+3. **Core product layers** — From PRD Section 4a (Product Layers) and Context Contract:
+   - Control / governance layer: [scope]
+   - Autonomous agent operating layer: [scope]
+   - Decision / explainability layer: [scope]
+   - Reporting / audit layer: [scope]
+
+4. **Must-preserve features** from prior prototypes:
+   | Feature | Source | In Current PRD? | Design Plan |
+   |---------|--------|:---------------:|-------------|
+
+5. **Must-add features** from Context Contract:
+   | Feature | Source | Why Missing Before | Design Plan |
+   |---------|--------|-------------------|-------------|
+
+6. **Features intentionally excluded** with rationale:
+   | Feature | Why Excluded | Who Decided |
+   |---------|-------------|-------------|
+
+7. **Prototype coverage target** — How many pages/sections will the prototype need?
+
+8. **Golden path demo** — What's the 5-minute demo narrative? (preliminary, refined in Phase 3)
+
+#### Step 2: Prior Prototype Comparison Matrix (if prior prototype exists)
+
+If a richer prior prototype was provided (e.g., ROI v2), compare the planned design against it:
+
+| Feature | Prior Prototype Has It | PRD Includes It | Research Covers It | User Guided It | Include? | Rationale |
+|---------|:---------------------:|:---------------:|:-----------------:|:--------------:|:--------:|-----------|
+
+**Do NOT proceed to Phase 1 until this matrix is complete.**
+
+**Must-not-regress constraint:** If the prior prototype has a feature and the current design excludes it, the designer MUST justify why. "The PRD didn't mention it" is NOT a valid justification — it may indicate the PRD needs updating (flag it in the feedback edge).
 
 ---
 
@@ -399,6 +454,75 @@ Design the journey from zero-state to productive user.
 
 ---
 
+## Agentic Product Design Patterns (NEW v1.0.0)
+
+For any product that includes autonomous agents, monitoring, or proactive automation (as identified in PRD Section 4d or Context Contract), the design MUST include these additional sections:
+
+### Human-Agent Interaction Design
+
+| Interaction | Human Does | Agent Does Autonomously | Agent Suggests | Requires Approval | Audited How |
+|-------------|-----------|------------------------|---------------|-------------------|-------------|
+| Discovery | Configures scan scope | Runs scheduled scans, detects new tools | "3 new tools found" notification | Adding to policy | Scan log |
+| Governance | Sets policies | Monitors compliance continuously | "Policy violation detected" alert | Enforcement actions | Policy audit trail |
+| Spending | Sets budgets | Tracks spend, detects anomalies | "Budget exceeded" alert | Reallocation | Cost event log |
+| Reporting | Configures templates | Generates reports on schedule | "Report ready for review" | Publishing | Generation log |
+
+### Required Agentic Design Surfaces
+
+For products with autonomous agents, the design must include surfaces for:
+
+1. **Agent Status Dashboard** — Where users see what agents are doing, their health, last run time, findings queue. Part of the Command Center or a dedicated "Dispatch Center" page.
+2. **Notification / Finding Feed** — How agent findings surface to humans. Not just email — in-product notification center with priority, category, and action links.
+3. **Approval Queue** — Where humans review and approve/reject agent-suggested actions. Must show evidence, risk assessment, and undo capability.
+4. **Action Audit Trail** — Where users can see what agents did, when, why, and what the outcome was. Filterable, searchable, linkable.
+5. **Contextual AI Rail** (if applicable) — If the product includes Amazon Q or similar contextual AI, design the rail's placement (right side panel), behavior (persistent vs. collapsible), and interaction model (natural language query, "what changed since last review", proactive suggestions).
+
+### Agent Orchestration Patterns
+
+If the product has multiple autonomous agents:
+- **Dispatch Center** — Hub page showing all agents, their status, recent actions, and health
+- **Agent Configuration** — Where users configure agent behavior, frequency, scope, and notification preferences
+- **Cross-Agent Correlation** — How findings from different agents are correlated and presented together
+
+## Two-Layer Output Structure (NEW v1.0.0)
+
+The design spec has two audiences with different needs. Structure the output accordingly:
+
+### Layer A: PM-Readable Experience Spec (READ THIS FIRST)
+Short, clear, decision-oriented. A PM should be able to read Layer A alone and understand the product experience.
+
+Sections in Layer A:
+- Executive Summary
+- Design Context
+- Phase 0: Design Scope Contract (with Prior Prototype Comparison Matrix)
+- Phase 1: First Principles Design
+- Phase 2: Pattern Reality Check (layout rationale, alternatives, component mapping)
+- Human-Agent Interaction Design (if agentic)
+- Product Navigation Map
+- 5-Minute Demo Script
+- Stickiness Design
+- Handoff Notes for Prototype Builder
+- Feedback to PRD
+
+### Layer B: Engineering / UX Appendix (REFERENCE)
+Detailed, technical, implementation-oriented. Engineers, designers, and accessibility reviewers need this.
+
+Sections in Layer B:
+- 3A: Core Design Checklist
+- 3B: Nielsen Heuristic Audit
+- 3C: Interaction State Matrix
+- 3D: Keyboard Navigation Spec
+- 3E: Anti-Pattern Validation
+- 3F: Data Visualization Matrix
+- 3G: Micro-Interaction Spec
+- 3H: Responsive Breakpoint Specs
+- 3I: Accessibility Depth
+- 3J: Wayfinding & Navigation
+- 3K: First-Time User Experience
+- Error & Edge States
+
+**Label the layers clearly in the output.** A reader should see "## LAYER A: EXPERIENCE SPEC" and "## LAYER B: ENGINEERING APPENDIX" as major section breaks.
+
 ## Output Format
 
 ```markdown
@@ -410,10 +534,14 @@ timestamp: [ISO 8601]
 status: draft | reviewed | approved
 design-context: consumer | enterprise
 patterns-applied: [Spotify+Stripe | Salesforce+Datadog]
-skill-version: 0.2.0
+skill-version: 1.0.0
 ---
 
 # Design Spec: [Feature Name]
+
+---
+# LAYER A: EXPERIENCE SPEC
+---
 
 ## Executive Summary
 [What experience are we creating? 3-5 sentences.]
@@ -422,6 +550,12 @@ skill-version: 0.2.0
 **Type:** [Consumer / Enterprise]
 **Patterns Applied:** [Spotify+Stripe / Salesforce+Datadog]
 **Component Library:** Cloudscape Design System
+
+## Phase 0: Product Context Reconciliation
+### Design Scope Contract
+[Product thesis, personas, layers, must-preserve, must-add, excluded, coverage target, golden path]
+### Prior Prototype Comparison Matrix
+[Feature | Prior Has | PRD Has | Research Has | User Guided | Include? | Rationale]
 
 ## Phase 1: First Principles Design
 
@@ -467,6 +601,29 @@ skill-version: 0.2.0
 | Data table | Table + Collection Preferences | [configuration notes] |
 | Detail view | Split Panel | [configuration notes] |
 [...]
+
+## Human-Agent Interaction Design (if agentic product)
+[Table from Agentic Product Design Patterns section]
+[Agent Status Dashboard, Notification Feed, Approval Queue, Audit Trail, Contextual AI Rail specs]
+
+## Product Navigation Map (NEW — v0.3.0)
+[Full page/section inventory — see existing spec]
+
+## 5-Minute Demo Script (MANDATORY)
+[Narrative walkthrough — see existing spec]
+
+## Stickiness Design
+[Habit loops, return triggers]
+
+## Handoff Notes for Prototype Builder
+[Specific guidance]
+
+## Feedback to PRD
+[Assumptions, UX constraints, new requirements]
+
+---
+# LAYER B: ENGINEERING / UX APPENDIX
+---
 
 ## Phase 3: Design Checklist + Audits
 
@@ -587,6 +744,17 @@ Write the exact walkthrough a PM would give to demo this product in 5 minutes. T
 
 ## Quality Checklist
 
+- [ ] Phase 0: Design Scope Contract exists BEFORE any design work
+- [ ] Prior Prototype Comparison Matrix completed (if prior prototype exists)
+- [ ] All Must-Preserve items from Context Contract appear in Navigation Map
+- [ ] All Must-Add items from Context Contract appear in Navigation Map
+- [ ] Product layers from PRD Section 4a are all represented in the design
+- [ ] Human-Agent Interaction Design section exists (for agentic products)
+- [ ] Agent Status Dashboard, Approval Queue, and Audit Trail surfaces designed (for agentic products)
+- [ ] Contextual AI Rail designed (if product includes Amazon Q or similar)
+- [ ] Output has clear Layer A / Layer B separation
+- [ ] Layer A is PM-readable without needing Layer B
+- [ ] Regression Watchlist items from Context Contract verified present in design
 - [ ] First principles design exists BEFORE pattern application
 - [ ] Layout rationale explains WHY, not just WHAT
 - [ ] At least 2 alternatives considered for each major decision
@@ -642,6 +810,17 @@ Write the exact walkthrough a PM would give to demo this product in 5 minutes. T
 - Original 10-criterion design checklist (now section 3A)
 - Output format structure (extended, not replaced)
 - Quality checklist (extended from 7 to 19 items)
+
+### v1.0.0 Changes (2026-05-20, context fusion integration + agentic patterns + two-layer output)
+
+| # | Gap Identified | Section Added | Rationale |
+|---|---------------|---------------|-----------|
+| 17 | No context reconciliation before design — design faithfully implemented narrow scope while richer prior artifacts existed | Phase 0: Product Context Reconciliation | Added Design Scope Contract and Prior Prototype Comparison Matrix. Design cannot begin until the reconciliation is complete. Must-not-regress constraint prevents silent feature drops. |
+| 18 | No prior prototype comparison — designer didn't check if current design was narrower than prior iterations | Prior Prototype Comparison Matrix in Phase 0 | If a richer prototype exists, every feature it has must be accounted for: included, simplified, or explicitly excluded with rationale. |
+| 19 | Design spec mixed PM-readable content with engineering detail — overwhelming for PMs, not clearly audience-separated | Two-Layer Output Structure | Layer A (Experience Spec): product thesis, journey, navigation, demo script, handoff. Layer B (Engineering Appendix): states, keyboard, accessibility, responsive, micro-interactions. Each audience reads their layer. |
+| 20 | No agentic product design patterns — designer had no guidance for products with autonomous agents | Agentic Product Design Patterns section + Human-Agent Interaction Design | Added mandatory surfaces: Agent Status Dashboard, Notification Feed, Approval Queue, Audit Trail, Contextual AI Rail. Added Dispatch Center and Agent Configuration patterns for multi-agent products. |
+| 21 | No contextual AI rail pattern — products with Amazon Q-style assistant had no design guidance | Contextual AI Rail in Agentic Patterns | Specifies placement (right panel), behavior (persistent vs collapsible), and interaction model. |
+| 22 | Context Contract not in input contract — design had no mechanism to receive accumulated strategic context | Updated Input Contract with Context Contract and prior prototype references | Context Contract is now a required input. Extraction rules updated to pull Product Layers, Autonomous Agent Behaviors, and Must-Preserve/Must-Add inventories. |
 
 ### v0.3.0 Changes (2026-05-20, prototype gap analysis)
 

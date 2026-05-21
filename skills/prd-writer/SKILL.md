@@ -5,7 +5,7 @@ description: >
   "create product requirements", "draft product spec", or when the pm-pipeline orchestrator
   invokes Stage 2. Produces a problem-led PRD with detailed problem statements,
   solution narrative, customer experience, and 25 MECE FAQs.
-version: 2.0.0
+version: 3.0.0
 ---
 
 # PRD Writer
@@ -15,6 +15,8 @@ Write human-readable product requirements documents. The PRD helps product, desi
 **This is a product document, not a pipeline artifact.** Do NOT expose internal pipeline mechanics in the final PRD. No "Decision to Inform," "Solution Lineage," "Design Feedback," "Prototype Patch," "v3 patch," stage metadata, or version tracking in the visible PRD body. Those belong in pipeline-state.md or appendix only.
 
 **Context Fusion awareness (v2.0.0):** If a Context Contract (`context-contract-v[N].md`) is provided, load it before writing. The contract contains Must-Preserve features, Must-Add features, Product Layer Map, and Design/Prototype Mandates from prior iterations. The PRD must reconcile against it — any Must-Preserve item excluded from the PRD requires explicit justification.
+
+**Product memory and completeness (v3.0.0):** The PRD Writer must now preserve the richest product thesis from all available context — not just the research artifact. Prior prototypes, user guidance, debate docs, and accepted learnings all carry product decisions that must not silently regress. The v3.0.0 additions fix the gap between "writes a well-structured document" and "writes a complete product document that preserves accumulated product thinking."
 
 ## Core Principles
 
@@ -69,6 +71,74 @@ After drafting the PRD, compare the Scope and Phasing table against the Context 
 - Every Must-Add item must appear (as capability, scope row, or explicit exclusion with rationale)
 - Any Must-Preserve item excluded from the PRD must have an explicit "Exclusion Rationale" note — silent omission is a quality failure
 
+## Pre-Writing Steps (v3.0.0 — MANDATORY before writing the PRD)
+
+The PRD Writer's v2.0.0 failure mode: it can now write a well-structured document, but it still loses the richest product thesis when upstream context contains a richer product direction than the research artifact alone. These steps fix that.
+
+### Step 0: Product Thesis Preservation
+
+Before writing ANY PRD content, produce a **Product Thesis Contract** internally (not included in the final PRD, but used to guide writing):
+
+```text
+Product Thesis Contract:
+1. Core product idea: [one sentence — what are we building?]
+2. Strategic wedge: [how does this enter the market?]
+3. Product category: [what category does this create or join?]
+4. What must not be lost from prior context: [list product decisions, strategic angles, and feature inventories from user guidance, prior prototypes, debate docs, and accepted learnings]
+5. Must-have product layers: [which layers — control, autonomous, decision, reporting, etc. — are required for the product to be complete?]
+6. What makes this idea non-obvious: [what differentiates this from the default interpretation of the research?]
+7. What would make the PRD too narrow: [what dimensions, if missing, would cause the PRD to describe a lesser product than what the accumulated context supports?]
+```
+
+**Why this step exists:** The biggest PRD Writer failure mode is writing a clean PRD of a *narrower* product than the accumulated context supports. The research artifact may narrow the idea (it focuses on evidence), but user guidance, prior prototypes, and debate docs carry product decisions that must not regress. The Product Thesis Contract catches this before writing begins.
+
+### Step 1: Context Reconciliation Table
+
+Compare all available context sources and produce a reconciliation table (included as an internal working artifact, not in the final PRD):
+
+```text
+| Product element | Found in research? | Found in user guidance? | Found in prior prototype? | Found in debate/critique? | Include in PRD? | Rationale |
+|---|---|---|---|---|---|---|
+```
+
+**Rules:**
+- A product element that appears in user guidance AND a prior prototype is assumed to be a product decision, not a hypothesis. Include it unless you have strong evidence it was rejected.
+- A product element in research only may be a hypothesis — evaluate based on evidence strength.
+- A product element missing from research but present in prior prototype needs explicit handling: include with a note about evidence gaps, or exclude with rationale.
+- **Silent omission is a quality failure.** Every element in the reconciliation table must have an Include/Exclude decision with rationale.
+
+### Step 2: Reference Prototype Preservation (if prior prototype exists)
+
+If the user provides a prior prototype (e.g., ROI v2, an earlier HTML artifact, or references a richer manual iteration):
+
+1. **Extract major features** from the prior prototype
+2. **Label each** as: Keep (carry into PRD) / Discard (not part of product direction — explain why) / Later (v2/v3 — explain sequencing rationale) / Unresolved (needs user input)
+3. **Include kept features** in the Solution Proposal, Scope table, or both
+4. **Explain discarded features** — why they are not part of the PRD
+
+This creates the bridge between richer prior prototypes and the PRD, preventing regressions where the pipeline produces a narrower product than what the user already had.
+
+### Step 3: Evidence Tag Planning
+
+Plan which claims in the PRD will carry which evidence tags. Every substantive claim must be tagged with one of:
+
+| Tag | Meaning | Example |
+|-----|---------|---------|
+| **[Evidence]** | Supported by cited research with URL | "82% of enterprises have unknown AI agents [Evidence: CSA 2026]" |
+| **[Assumption]** | Plausible but unvalidated | "Expected <1% CPU impact [Assumption: needs engineering spike]" |
+| **[Design hypothesis]** | Needs prototype or customer validation | "70%+ nudge compliance [Design hypothesis: needs design partner test]" |
+| **[Architecture assumption]** | Needs engineering validation | "Data stored in customer's AWS account [Architecture assumption: needs arch review]" |
+| **[Metric target]** | Proposed target, not actual baseline | "80% governance coverage in 90 days [Metric target]" |
+
+**Rules:**
+- Claims from Tier 1-2 sources → [Evidence]
+- Claims from Tier 3-5 or PM inference → label honestly
+- Operational estimates (hours saved, time reductions) → [Assumption] or [Design hypothesis]
+- Architecture claims → [Architecture assumption] unless engineering has confirmed
+- Metric targets → always [Metric target]
+
+**In the final PRD:** Evidence tags appear as subtle inline markers. Don't clutter every sentence — use tags for claims that a skeptical VP or engineer would question. Claims from primary sources (IBM, Gartner with URL) don't need an Evidence tag — the inline citation IS the tag.
+
 ## PRD Structure
 
 ### Section 1: Customer Problem (THE HEART — 40%+ of PRD length before FAQs)
@@ -109,6 +179,22 @@ Personas appear AFTER the problem statements, as supporting context. The reader 
 - 2-3 sentences each for additional stakeholders (engineering leads, finance, legal, CISO)
 
 **Persona title guidance:** Avoid vague or inflated titles. If you're unsure whether a title is real, search for it on LinkedIn. Good: "Director of End-User Computing," "Head of IT Operations," "VP of Enterprise Technology." Bad: "Director of Digital Workspace," "Chief AI Governance Officer."
+
+#### Persona-Surface Matrix (v3.0.0 — mandatory for multi-audience products)
+
+For products with 2+ distinct audiences, include a Persona-Surface Matrix immediately after the persona descriptions. This prevents persona confusion and clarifies UX boundaries for downstream stages:
+
+| Persona | Surface they use | Primary job | What they can do | What they cannot do |
+|---------|-----------------|-------------|-----------------|---------------------|
+| IT admin | Control Tower admin dashboard | Inventory, policy, risk, agent approval | approve, monitor, investigate, configure | Inspect employee content, view individual prompts |
+| Employee | Quick Desktop nudge / notification | Compliant AI usage | Accept/dismiss nudge, provide justification, switch tools | View org dashboard, configure policies |
+| CIO/CISO | Executive report / digest | Governance maturity, board reporting | Review trends, approve investment, export reports | Configure operational policies |
+
+**Rules:**
+- "What they cannot do" is as important as "what they can do" — it defines privacy and access boundaries
+- This table becomes a design constraint for the Designer stage
+- If a persona uses multiple surfaces, list each as a separate row
+- Skip this table for single-persona products
 
 ### Section 3: Jobs to Be Done (table format)
 
@@ -161,25 +247,37 @@ For each capability, write a paragraph (not bullets):
 - **Why it matters:** What's new vs. status quo
 - **What changes for the user:** Before → after
 
-#### 4d. Autonomous Agent Behaviors (NEW v2.0.0 — mandatory for agentic products)
+#### 4d. Autonomous Agent Behaviors (v2.0.0 — mandatory for agentic products)
 
 For any product that involves agents, autonomous monitoring, or proactive automation, this subsection is MANDATORY. Skip only for simple features with no autonomous behavior.
 
-| Agent / Automation | What It Does Autonomously | What It Suggests | What Requires Human Approval | How It's Audited |
-|-------------------|--------------------------|-----------------|-----------------------------|--------------------|
-| Discovery Agent | Scans for new AI tools on schedule | "3 new unsanctioned tools detected" | Adding to governance policy | Scan log with timestamps |
-| Governance Agent | Monitors policy compliance continuously | "Tool X violating data residency policy" | Enforcement actions (block/restrict) | Policy action audit trail |
-| Spend Agent | Tracks AI spend across vendors | "Spending anomaly: 40% increase in Copilot seats" | Budget reallocation | Cost event history |
-| Report Agent | Generates weekly/quarterly reports | "Board report ready for review" | Publishing/distributing report | Report generation log |
+**Agentic Product Check (v3.0.0):** Before writing this section, the PRD Writer must recognize when the product belongs to an agentic/AI-native category. Signals: the product involves AI agents, copilots, automation, autonomous monitoring, proactive recommendations, or decision workflows. If ANY of these signals are present, this section is mandatory — do not skip.
 
-For each agent/automation:
-- **What the human does:** What triggers or actions remain human-initiated
+**Agentic Behavior Model (full table):**
+
+| Agent / Behavior | Trigger | Input Context | What It Does Autonomously | What It Suggests | What Requires Human Approval | Audit Event | Failure Mode |
+|-----------------|---------|--------------|--------------------------|-----------------|-----------------------------|--------------------|-------------|
+| Discovery Agent | New process detected / scheduled scan | Process signatures, integration signals | Scans endpoints, classifies tools | "3 new unsanctioned tools detected" | Adding to governance policy | Scan log with timestamps | False positive → admin feedback loop |
+| Risk Agent | Policy violation detected | Usage signals, risk rules | Evaluates risk dimensions | "Tool X violating data residency" | Block/restrict actions | Policy action audit trail | Noisy alerts → threshold tuning |
+| Spend Agent | Cost data refresh | Billing APIs, expense data | Tracks spend, detects anomalies | "Spending anomaly: 40% spike" | Budget reallocation | Cost event history | Incomplete data → confidence labels |
+| Report Agent | Scheduled cadence | All governance data | Generates digest/report | "Board report ready for review" | Publishing/distributing | Report generation log | Stale data → freshness check |
+
+For each agent/automation, the table must cover:
+- **Trigger:** What initiates the agent's action (schedule, event, threshold)
+- **Input context:** What data the agent reads
 - **What the agent does autonomously:** What runs without human intervention
 - **What the agent suggests:** Recommendations that surface to the human
 - **What requires approval:** Actions that need explicit human sign-off before executing
-- **How the action is audited:** How the user can review what the agent did and inspect evidence
+- **Audit event:** How the action is logged for audit trail
+- **Failure mode:** What happens when the agent is wrong, and how it recovers
 
-**This subsection ensures downstream stages (Designer, Prototype Builder) know to design surfaces for agent status, agent actions, and human approval workflows — not just static dashboards.**
+**v3.0.0 additions — the following must also be specified:**
+- **What does the agent remember?** Does the agent learn from admin feedback? Does it persist state between runs?
+- **How is evidence shown?** When the agent recommends an action, what evidence does it present to justify the recommendation?
+- **What are the evals?** How do we measure agent quality? (Acceptance rate, override rate, false positive rate, time-to-resolution)
+- **What happens when the agent is wrong?** Explicit failure mode and recovery path for each agent
+
+**This subsection ensures downstream stages (Designer, Prototype Builder) know to design surfaces for agent status, agent actions, human approval workflows, evidence inspection, and agent performance monitoring — not just static dashboards.**
 
 ### Section 5: End-to-End Customer Experience (400-800 words)
 
@@ -282,22 +380,95 @@ Collected bibliography with evidence tier noted. Every source should also appear
 **E. Pipeline Metadata** (only if needed for internal tracking)
 Design feedback integration, prototype validation results, version history. This is where "v2 patch from Stage 4" type content lives — never in the main body.
 
+### Section 10: Downstream Handoff Requirements (v3.0.0 — mandatory)
+
+The PRD is not a standalone artifact — it feeds Designer, Prototype Builder, Gandalf, and Launch Readiness. This section tells downstream stages what they must preserve, include, challenge, and validate.
+
+```text
+## Downstream Handoff Requirements
+
+### Designer must preserve:
+- [Key experience requirements that must survive design — e.g., "nudge UX must feel like a suggestion, not surveillance"]
+- [Product layers that must have designed surfaces — e.g., "autonomous agent layer needs agent status, approval queue, evidence panel"]
+- [Persona-surface boundaries — e.g., "employees must never see the admin dashboard"]
+
+### Prototype Builder must include:
+- [Prototype-required features — e.g., "AI inventory, governance policies, nudge preview, audit log, cost dashboard, maturity scorecard"]
+- [If agentic: "agent monitoring, recommended decisions, action/case creation, weekly digest, executive report"]
+- [If prior prototype exists: "all kept features from Reference Prototype Feature Inventory"]
+- [Design principle: "Do not build only a dashboard — build the operating loop"]
+
+### Gandalf should challenge:
+- [Open risks — e.g., "privacy backlash from desktop monitoring"]
+- [Unvalidated assumptions — e.g., "70%+ nudge compliance rate"]
+- [Architecture assumptions — e.g., "customer-owned AWS storage feasibility"]
+
+### Launch Readiness must validate:
+- [Engineering questions — e.g., "false positive rate, CPU/battery impact, signature database coverage"]
+- [Legal questions — e.g., "GDPR opt-in model for desktop monitoring"]
+- [Customer questions — e.g., "design partner feedback on employee sentiment"]
+```
+
+**Rules:**
+- This section is mandatory for every PRD, even simple ones
+- For single-feature PRDs, the handoff may be brief (3-5 bullets total)
+- For complex multi-layer products, the handoff should be comprehensive — this is where the PRD prevents downstream regression
+- If a prior prototype exists with richer features, the handoff must explicitly say "Prototype Builder must include X from prior prototype"
+
+## PRD Self-Eval Sidecar (v3.0.0)
+
+After writing the PRD, generate a sidecar file `prd-self-eval-v[N].md` that grades the PRD on product completeness. This is not for the final human audience — it's a diagnostic tool for evaluating the agent.
+
+```text
+# PRD Self-Evaluation: [topic] v[N]
+
+| Dimension | Score (1-5) | Evidence | Fix needed? |
+|-----------|:-----------:|---------|:-----------:|
+| Problem clarity | | [cite section, word count] | |
+| Persona clarity | | [cite realistic titles, surface matrix] | |
+| Solution clarity | | [cite narrative, capabilities] | |
+| Product-layer completeness | | [cite layers table, missing layers] | |
+| Agentic behavior completeness | | [cite agent table, missing agents/failure modes] | |
+| Evidence quality | | [cite tagged claims, % with sources] | |
+| Scope discipline | | [cite cuts with rationale, prior prototype reconciliation] | |
+| Downstream prototype readiness | | [cite handoff section, prototype-required features] | |
+| Product thesis preservation | | [compare Product Thesis Contract vs final PRD — did anything regress?] | |
+| Context reconciliation | | [cite reconciliation table — any silent omissions?] | |
+
+## Thesis Preservation Check
+- Product Thesis Contract said: [X]
+- Final PRD captures: [Y]
+- Gap: [Z or "none"]
+
+## Reconciliation Check
+- [N] product elements evaluated
+- [M] included, [K] excluded with rationale, [J] silently omitted (FAILURE if > 0)
+```
+
+**Rules:**
+- Generate this sidecar for every PRD, even simple ones
+- A score of 3 or below on any dimension should trigger a revision before delivery
+- "Silently omitted" count must be 0 — any non-zero value is a quality failure
+- The sidecar is saved alongside the PRD (e.g., `prd-self-eval-v5.md`)
+
 ## Section Length Targets
 
 | Section | Target Length | Why |
 |---------|-------------|-----|
 | Customer Problem (3-5 statements) | 900-2,000 words | 300-400 words per problem, deepest section |
-| Personas | 300-500 words | Supporting context, not the anchor |
+| Personas + Persona-Surface Matrix | 400-600 words | Supporting context + UX boundaries |
 | JTBD | 200-300 words | Table + brief ranking rationale |
-| Solution Narrative | 300-400 words | Context before capabilities |
+| Solution Narrative + Product Layers | 400-600 words | Context before capabilities, architectural backbone |
 | Core Capabilities | 600-1,000 words | Paragraph per capability with problem links |
-| End-to-End Experience | 400-600 words | First-class section, coherent journey |
+| Agentic Behavior Model | 200-500 words | Table + failure modes (skip for non-agentic) |
+| End-to-End Experience | 400-800 words | First-class section, all product layers as journeys |
 | Scope and Phasing | 200-300 words | Table + rationale for cuts |
 | Success Metrics | 300-400 words | North star + supporting + anti-metrics + gates |
 | Risks/Dependencies/Questions | 400-600 words | Specific, falsifiable, with owners |
 | FAQs (25 total) | 2,500-3,500 words | Per faq-framework.md calibration |
+| Downstream Handoff | 150-300 words | What downstream stages must preserve/include/challenge |
 | Appendix | 400-800 words | Research basis, competitive, selection rationale, sources |
-| **Total Target** | **7,000-10,000 words** | Deep, human-readable, decision-ready |
+| **Total Target** | **7,500-11,000 words** | Deep, human-readable, decision-ready, complete |
 
 ## Feedback Loop Integration Rules
 
@@ -502,7 +673,18 @@ Ranking rationale: [2-3 sentences]
 - [ ] 25 FAQs, MECE across all categories, skeptical
 - [ ] FAQ answers include inline source links
 - [ ] Self-contained — readable without the research document
-- [ ] Total word count in 7,000-10,000 range
+- [ ] Total word count in 7,500-11,000 range
+
+### Product Memory & Completeness (v3.0.0)
+- [ ] Product Thesis Contract written before PRD (internally — not in final PRD)
+- [ ] Context Reconciliation Table produced — every product element has Include/Exclude with rationale
+- [ ] Zero silent omissions (product elements from prior context dropped without rationale)
+- [ ] Reference Prototype Feature Inventory created (if prior prototype exists)
+- [ ] Persona-Surface Matrix included for multi-audience products
+- [ ] Agentic Behavior Model includes trigger, input, output, approval, audit, AND failure mode for each agent
+- [ ] Evidence tags used for unvalidated claims (Assumption, Design hypothesis, Architecture assumption, Metric target)
+- [ ] Downstream Handoff section specifies what Designer/Prototype/Gandalf/Launch must preserve/include/challenge/validate
+- [ ] PRD Self-Eval sidecar generated with 0 silent omissions and no dimension scored below 3
 
 ## Eval Learnings Log
 
@@ -536,6 +718,22 @@ Ranking rationale: [2-3 sentences]
 38. Added prior prototype references as input — PRD must reconcile against richer iterations
 39. Renumbered capabilities subsection from 4b to 4c (after new Product Layers subsection)
 40. Increased Experience section word target from 400-600 to 400-800 for multi-layer products
+
+### v2.0.0 → v3.0.0 (2026-05-20, product memory + completeness + downstream handoff)
+
+**Root cause:** v2.0.0 fixed document structure (PRD v4 proved it works). But PRD v4 also exposed the next layer of failure: the PRD Writer can write a well-structured document, but it still does not reliably preserve the richest product thesis from accumulated context. It wrote a good "AI Control Tower" PRD but not the stronger "Quick Suite AI Adoption Command Center + autonomous agent operating layer" PRD. The autonomous agent layer, observe definition, data model, and several product decisions from user guidance/prior prototypes were missing or underspecified.
+
+| # | Gap Identified | Fix Applied | Category |
+|---|---------------|-------------|----------|
+| 41 | PRD Writer doesn't check if research narrows the idea below what prior context supports | Added Step 0: Product Thesis Contract — internal pre-writing artifact that captures the richest thesis from ALL context sources | Product Memory |
+| 42 | Product elements from user guidance and prior prototypes can silently disappear | Added Step 1: Context Reconciliation Table — mandatory comparison of research vs. user guidance vs. prior prototype vs. debate, with Include/Exclude rationale for every element | Product Memory |
+| 43 | Prior prototype features not systematically preserved | Added Step 2: Reference Prototype Preservation — extract features, label Keep/Discard/Later/Unresolved, carry kept features into PRD | Product Memory |
+| 44 | Claims lack confidence labels — reader can't tell evidence from assumption | Added Step 3: Evidence Tag Planning — five tag types (Evidence, Assumption, Design hypothesis, Architecture assumption, Metric target) with rules for when to use each | Evidence Hygiene |
+| 45 | Multi-audience products don't clearly specify which persona uses which surface | Added Persona-Surface Matrix — mandatory for multi-audience products, defines surface, job, allowed actions, and NOT-allowed actions per persona | Persona Clarity |
+| 46 | Agentic Behavior Model missing failure modes, memory, evidence display, and evals | Enhanced Section 4d with trigger, input context, failure mode, agent memory, evidence display, and eval metrics | Agentic Completeness |
+| 47 | PRD doesn't tell downstream stages what to preserve | Added Section 10: Downstream Handoff — mandatory section specifying what Designer, Prototype, Gandalf, and Launch Readiness must preserve/include/challenge/validate | Downstream Handoff |
+| 48 | No systematic way to evaluate PRD completeness | Added PRD Self-Eval sidecar — generated after every PRD, scores 10 dimensions, catches silent omissions | Self-Evaluation |
+| 49 | Word count target too low for new sections | Increased total target from 7,000-10,000 to 7,500-11,000 | Calibration |
 
 ### v0.4.0 → v1.0.0 (2026-05-20, full structural rewrite based on user + GPT critique)
 15. "Decision to Inform" and "Executive Summary" removed from top — conclusions should be earned, not declared first

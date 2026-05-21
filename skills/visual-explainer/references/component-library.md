@@ -2,11 +2,27 @@
 
 CSS patterns extracted from the towards-jarvis visual explainer + cognitive science components. Copy these directly — they're proven to work.
 
-## 0. Cognitive Science Components (NEW in v0.2.0)
+## 0. Cognitive Science Components (v1.0.0)
 
-### Concept Adjacency Map
-Interactive node graph placed after hero. Center node = main concept, surrounding nodes = related concepts.
-Color-code by domain: technical (blue), business (accent/copper), governance (accent2/purple), user (cyan).
+### Typed Concept Map (v1.0.0 — replaces generic concept adjacency map)
+Interactive node graph placed after hero. Center node = main topic, surrounding nodes = typed entities from source material.
+Nodes are typed by category — color comes from type, not arbitrary assignment. Edges have semantic labels.
+Click-to-scroll navigates to the section where each concept is DEFINED. Hover shows 1-sentence definition tooltip.
+
+**Node type → color mapping:**
+| Type | CSS Class | Color Variable | Background | Border |
+|------|-----------|---------------|------------|--------|
+| Persona | `.cm-persona` | `--cyan` | rgba(23,162,184,0.08) | rgba(23,162,184,0.35) |
+| Problem | `.cm-problem` | `--red` | rgba(192,57,43,0.08) | rgba(192,57,43,0.3) |
+| Capability | `.cm-capability` | `--accent` | rgba(204,120,92,0.08) | rgba(204,120,92,0.35) |
+| Data Source | `.cm-data` | `--blue` | rgba(41,128,185,0.08) | rgba(41,128,185,0.4) |
+| System Component | `.cm-system` | `--accent2` | rgba(124,111,205,0.08) | rgba(124,111,205,0.4) |
+| Competitor | `.cm-competitor` | `--yellow` | rgba(212,160,23,0.08) | rgba(212,160,23,0.3) |
+| Metric | `.cm-metric` | `--green` | rgba(42,157,98,0.08) | rgba(42,157,98,0.3) |
+| Risk | `.cm-risk` | `--red` (darker) | rgba(192,57,43,0.1) | rgba(192,57,43,0.35) |
+| Center (main topic) | `.cm-center` | `--accent` | rgba(204,120,92,0.12) | var(--accent) |
+
+**Minimum requirements:** Center node + at least 6 adjacent nodes spanning 3+ types. Every edge has a semantic label. Every node links to a section.
 
 ```css
 .concept-map { position: relative; min-height: 520px; padding: 40px 20px; }
@@ -20,6 +36,24 @@ Color-code by domain: technical (blue), business (accent/copper), governance (ac
 .cm-node p { font-size: 10px; color: var(--text-muted); line-height: 1.3; }
 .cm-center { background: rgba(204,120,92,0.12); border-color: var(--accent); }
 .cm-center h5 { color: var(--accent); font-size: 15px; }
+/* v1.0.0 typed node classes — color from type, not arbitrary domain */
+.cm-persona { background: rgba(23,162,184,0.08); border-color: rgba(23,162,184,0.35); }
+.cm-persona h5 { color: var(--cyan); }
+.cm-problem { background: rgba(192,57,43,0.08); border-color: rgba(192,57,43,0.3); }
+.cm-problem h5 { color: var(--red); }
+.cm-capability { background: rgba(204,120,92,0.08); border-color: rgba(204,120,92,0.35); }
+.cm-capability h5 { color: var(--accent); }
+.cm-data { background: rgba(41,128,185,0.08); border-color: rgba(41,128,185,0.4); }
+.cm-data h5 { color: var(--blue); }
+.cm-system { background: rgba(124,111,205,0.08); border-color: rgba(124,111,205,0.4); }
+.cm-system h5 { color: var(--accent2); }
+.cm-competitor { background: rgba(212,160,23,0.08); border-color: rgba(212,160,23,0.3); }
+.cm-competitor h5 { color: var(--yellow); }
+.cm-metric { background: rgba(42,157,98,0.08); border-color: rgba(42,157,98,0.3); }
+.cm-metric h5 { color: var(--green); }
+.cm-risk { background: rgba(192,57,43,0.1); border-color: rgba(192,57,43,0.35); }
+.cm-risk h5 { color: var(--red); }
+/* Legacy domain classes (deprecated, use typed classes above) */
 .cm-tech { background: rgba(41,128,185,0.08); border-color: rgba(41,128,185,0.4); }
 .cm-tech h5 { color: var(--blue); }
 .cm-biz { background: rgba(204,120,92,0.08); border-color: rgba(204,120,92,0.35); }
@@ -49,8 +83,9 @@ document.querySelectorAll('.cm-node[data-section]').forEach(node => {
 });
 ```
 
-### Analogy Bridge
+### Analogy Bridge (enhanced v1.0.0)
 Visual side-by-side mapping familiar concept → new concept. 3 structural mappings per bridge.
+v1.0.0 addition: mandatory "where it breaks" caveat section below the bridge.
 
 ```css
 .analogy-bridge {
@@ -79,6 +114,135 @@ Visual side-by-side mapping familiar concept → new concept. 3 structural mappi
   text-align: center; font-size: 13px; font-style: italic; color: var(--text-muted);
   margin-top: 12px; padding: 0 20px;
 }
+/* v1.0.0: "Where this analogy breaks" caveat */
+.analogy-caveat {
+  margin-top: 12px; padding: 12px 16px; border-radius: 8px;
+  background: rgba(212,160,23,0.06); border: 1px solid rgba(212,160,23,0.15);
+  font-size: 12px; color: var(--text-muted); line-height: 1.5;
+}
+.analogy-caveat .caveat-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--yellow); display: block; margin-bottom: 4px;
+}
+```
+
+### Definition Card (NEW v1.0.0)
+Used when introducing a new concept for the first time. Shows term, plain-language definition, type, key property, and common misconception. Use for first 3-5 key concepts, then transition to inline definitions.
+
+```css
+.definition-card {
+  display: flex; gap: 16px; align-items: flex-start;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  padding: 20px 24px; margin: 20px 0;
+  border-left: 3px solid var(--accent2);
+}
+.def-icon {
+  font-size: 28px; flex-shrink: 0; width: 44px; height: 44px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(124,111,205,0.08); border-radius: 10px;
+}
+.def-content { flex: 1; }
+.def-term {
+  font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 6px;
+}
+.def-definition {
+  font-size: 14px; color: var(--text-muted); line-height: 1.6; margin-bottom: 10px;
+}
+.def-attributes {
+  display: flex; flex-wrap: wrap; gap: 12px;
+}
+.def-attr {
+  font-size: 12px; color: var(--text-dim); padding: 4px 10px;
+  background: var(--surface2); border-radius: 6px;
+}
+.def-attr strong { color: var(--text-muted); }
+```
+
+HTML pattern:
+```html
+<div class="definition-card">
+  <div class="def-icon">🔍</div>
+  <div class="def-content">
+    <h4 class="def-term">[Term]</h4>
+    <p class="def-definition">[Plain-language definition, max 2 sentences]</p>
+    <div class="def-attributes">
+      <span class="def-attr"><strong>Type:</strong> [persona/capability/system/etc.]</span>
+      <span class="def-attr"><strong>Key property:</strong> [most important attribute]</span>
+      <span class="def-attr"><strong>Common misconception:</strong> [what people get wrong]</span>
+    </div>
+  </div>
+</div>
+```
+
+### System Architecture Diagram (NEW v1.0.0)
+Layer diagram with data flow arrows. Use for product internals, platform structure. Layers stack vertically with labeled arrows showing data flow between them.
+
+```css
+.sys-arch { display: flex; flex-direction: column; align-items: center; gap: 0; max-width: 800px; margin: 0 auto; }
+.sys-arch-layer {
+  width: 100%; padding: 18px 24px; border-radius: 10px; border: 1px solid;
+  display: flex; align-items: center; gap: 16px;
+  transition: transform 0.15s;
+}
+.sys-arch-layer:hover { transform: translateX(4px); }
+.sys-arch-layer .layer-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+  min-width: 80px; flex-shrink: 0;
+}
+.sys-arch-layer .layer-name { font-size: 14px; font-weight: 600; flex: 1; }
+.sys-arch-layer .layer-detail { font-size: 12px; color: var(--text-muted); }
+.sys-arch-arrow {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 4px 0; color: var(--text-dim);
+}
+.sys-arch-arrow .arrow-icon { font-size: 16px; }
+.sys-arch-arrow .arrow-label {
+  font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--text-dim); font-weight: 600;
+}
+/* Layer color variants */
+.sal-ui { background: rgba(23,162,184,0.06); border-color: rgba(23,162,184,0.25); }
+.sal-ui .layer-label { color: var(--cyan); }
+.sal-logic { background: rgba(204,120,92,0.06); border-color: rgba(204,120,92,0.25); }
+.sal-logic .layer-label { color: var(--accent); }
+.sal-data { background: rgba(41,128,185,0.06); border-color: rgba(41,128,185,0.25); }
+.sal-data .layer-label { color: var(--blue); }
+.sal-infra { background: rgba(124,111,205,0.06); border-color: rgba(124,111,205,0.25); }
+.sal-infra .layer-label { color: var(--accent2); }
+.sal-agent { background: rgba(42,157,98,0.06); border-color: rgba(42,157,98,0.25); }
+.sal-agent .layer-label { color: var(--green); }
+```
+
+### Customer Journey (NEW v1.0.0)
+Horizontal swim-lane with personas. Shows end-to-end user experience across touchpoints. Each row = a persona, columns = journey stages. Cells contain actions and emotional states.
+
+```css
+.journey-wrap { overflow-x: auto; margin: 24px 0; }
+.journey-table { border-collapse: collapse; width: 100%; min-width: 800px; }
+.journey-table th {
+  background: var(--surface2); color: var(--text-muted); font-size: 11px;
+  font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+  padding: 12px 16px; text-align: center; border: 1px solid var(--border);
+}
+.journey-table td {
+  padding: 14px 16px; border: 1px solid var(--border); font-size: 13px;
+  background: var(--surface); color: var(--text-muted); vertical-align: top;
+  min-width: 140px;
+}
+.journey-table tr:hover td { background: var(--surface2); }
+.journey-persona {
+  font-weight: 600; color: var(--text); white-space: nowrap;
+  min-width: 120px; background: var(--surface2) !important;
+}
+.journey-action { font-size: 12px; margin-bottom: 4px; }
+.journey-emotion {
+  font-size: 11px; padding: 2px 8px; border-radius: 4px;
+  display: inline-block; margin-top: 4px;
+}
+.je-positive { background: var(--green-bg); color: var(--green); }
+.je-neutral { background: rgba(136,136,160,0.1); color: var(--text-dim); }
+.je-negative { background: var(--red-bg); color: var(--red); }
+.je-delight { background: rgba(204,120,92,0.1); color: var(--accent); }
 ```
 
 ### "Why This Matters" Callout

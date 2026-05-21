@@ -25,7 +25,7 @@ The pipeline runs in two modes — **interactive** (pause after each stage for h
 | 0 | Setup | Creates working directory, pipeline state, stage-notes log | — | all |
 | 0.5 | Current State Auditor | Examines existing product UX, maps pain points, inventories competitor interaction patterns | v0.2.0 | all |
 | 1 | Researcher | Deep competitive analysis, capability evolution timelines, interaction pattern benchmarking | v0.5.0 | all |
-| 2 | PRD Writer | Customer-first PRD with dual-scope boundary (Eng v1 + Proto v1), 25 MECE FAQs, solution lineage | v0.4.0 | all |
+| 2 | PRD Writer | Customer-first PRD with thesis preservation, context reconciliation, evidence tags, self-eval sidecar | v3.0.0 | all |
 | 3 | Gandalf | Adversarial strategy gate — 12 scored questions, hybrid rubric + evidence scoring, max 3 rounds | v0.3.0 | standard+ |
 | 3.5 | Adversarial Debate | 5-round structured debate between 5 expert personas, produces new ideas through argument | v0.1.0 | deep |
 | 4 | Designer | UX/experience design with product navigation map, 5-minute demo script, Cloudscape component mapping | v0.3.0 | standard+ |
@@ -40,7 +40,9 @@ The pipeline runs in two modes — **interactive** (pause after each stage for h
 | Skill | What It Does | Version |
 |-------|-------------|---------|
 | Research Librarian | Shared web research capability callable by any agent | v0.1.0 |
-| Visual Explainer | Interactive HTML explainers with narration, diagrams, quizzes, and progressive disclosure | v0.2.0 |
+| Visual Explainer | Explanation-led interactive HTML explainers with typed concept maps, structural analogies, scenario quizzes, and narrative arcs | v1.0.0 |
+| Context Fusion | Synthesizes context across all pipeline artifacts, flags contradictions and gaps | v0.1.0 |
+| Validation Planner | Assumption mapping, prototype test plans, go/pivot criteria for external validation | v0.1.0 |
 | README Writer | Generates and validates READMEs using the PSB Method (Problem-Solution-Built) | v0.1.0 |
 
 ### Reference Files
@@ -55,6 +57,28 @@ The pipeline runs in two modes — **interactive** (pause after each stage for h
 | Eval Method | `skills/researcher/references/eval-method.md` | Research quality self-evaluation rubric |
 | PSB Method | `skills/readme-writer/references/psb-method.md` | README best practices research synthesis |
 | Component Library | `skills/visual-explainer/references/component-library.md` | Visual explainer HTML component patterns |
+
+## Commands
+
+### Pipeline Commands (run multiple stages)
+
+| Command | What It Does |
+|---------|-------------|
+| `/pm-pipeline [topic]` | Full pipeline orchestrator — supports `--mode` and `--depth` flags |
+| `/pm-deep [topic]` | Shortcut for full 11-stage pipeline (interactive, deep) |
+| `/pm-standard [topic]` | Shortcut for 7-stage pipeline (skips debate, eng alignment, post-launch) |
+| `/pm-fast [topic]` | Shortcut for 5-stage pipeline (research → PRD → prototype) |
+
+### Individual Skill Commands (run one stage)
+
+| Command | What It Does |
+|---------|-------------|
+| `/research [topic]` | Run competitive/market research |
+| `/write-prd [topic]` | Write a PRD from research artifacts |
+| `/build-prototype [topic]` | Build a single-file HTML prototype |
+| `/debate [topic or PRD]` | Run multi-persona adversarial debate |
+| `/visual-explainer [topic]` | Generate interactive HTML visual explainer |
+| `/context-fusion [topic]` | Synthesize context across all pipeline artifacts |
 
 ## How It Works
 
@@ -133,6 +157,16 @@ The `eval-runs/ai-adoption-control-plane/` directory contains a complete pipelin
 | Discovery & competitive analysis | [phuryn/pm-skills](https://github.com/phuryn/pm-skills) | Researcher's progressive specificity and assumption surfacing |
 | Context pruning & file-based state | [sdi2200262/agentic-project-management](https://github.com/sdi2200262/agentic-project-management) | Pipeline state management, stage-notes cross-stage learning log |
 | Adversarial scoring | [coleam00/adversarial-dev](https://github.com/coleam00/adversarial-dev) | Gandalf's rubric + evidence hybrid scoring, max retry limits |
+
+## Usage by Platform
+
+**Cowork (Desktop App):** Install the plugin, then use slash commands directly in chat. Pipeline artifacts appear as downloadable files. Best for interactive mode where you review each stage.
+
+**Claude Code (CLI):** Install with `/install-plugin /path/to/pm-os`. Run commands from any directory — artifacts are written to the current working directory. Best for autonomous mode and deep pipeline runs.
+
+**Dispatch:** Start a task with the pipeline command. Dispatch routes it to a Cowork session with the mounted folder. Good for kicking off long runs while you do other work.
+
+**Chat (claude.ai):** Skills are available if the plugin is installed to your account. Limited to skills that don't require file system access (research, debate). Prototyping and artifact generation work better in Cowork or Claude Code.
 
 ## Contributing
 
